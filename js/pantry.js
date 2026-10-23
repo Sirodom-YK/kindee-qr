@@ -74,14 +74,52 @@ async function loadHousehold() {
     return;
   }
 
+  renderHouseholdLine(line, households);
+  document.getElementById("pantry-panel").style.display = "block";
+  await Promise.all([loadMembers(), loadItems()]);
+}
+
+// อยู่บ้านเดียว: แสดงชื่อบ้าน / อยู่หลายบ้าน: ช่องเลือกบ้าน เปลี่ยนแล้วโหลดของบ้านนั้นทันที
+// บ้านที่เลือกถูกจำไว้ (saveCurrentHouseholdId) หน้าบ้านของฉันและหน้ารายงานจึงใช้บ้านเดียวกัน
+function renderHouseholdLine(line, households) {
   line.textContent = "";
-  line.appendChild(document.createTextNode(`🏠 ${pantryState.household.name} · `));
+
+  if (households.length > 1) {
+    const select = document.createElement("select");
+    select.id = "household-switch";
+    select.className = "household-switch";
+    select.setAttribute("aria-label", "เลือกบ้าน");
+    households.forEach((h) => {
+      const option = document.createElement("option");
+      option.value = h.id;
+      option.textContent = `🏠 ${h.name}`;
+      select.appendChild(option);
+    });
+    select.value = pantryState.household.id;
+    select.addEventListener("change", () => switchHousehold(households, select.value));
+    line.appendChild(select);
+  } else {
+    line.appendChild(document.createTextNode(`🏠 ${pantryState.household.name}`));
+  }
+
+  line.appendChild(document.createTextNode(" · "));
   const manageLink = document.createElement("a");
   manageLink.href = "household.html";
-  manageLink.textContent = households.length > 1 ? "เปลี่ยนบ้าน/เชิญสมาชิก" : "เชิญสมาชิก";
+  manageLink.textContent = "จัดการบ้าน/เชิญสมาชิก";
   line.appendChild(manageLink);
+}
 
-  document.getElementById("pantry-panel").style.display = "block";
+async function switchHousehold(households, householdId) {
+  pantryState.household = households.find((h) => h.id === householdId);
+  saveCurrentHouseholdId(householdId);
+
+  // ฟอร์มที่เปิดค้างอยู่เป็นของบ้านเดิม — ปิดก่อน กันบันทึกของผิดบ้าน
+  closeItemForm();
+  document.getElementById("filter-location").value = "";
+  document.getElementById("filter-type").value = "";
+  pantryState.items = [];
+  renderItems();
+
   await Promise.all([loadMembers(), loadItems()]);
 }
 
