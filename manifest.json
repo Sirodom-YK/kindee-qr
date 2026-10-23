@@ -1,0 +1,16 @@
+{
+  "name": "KinDee QR — สแกนอาหารและของในบ้าน",
+  "short_name": "KinDee QR",
+  "description": "สแกนดูข้อมูลอาหาร และติดตามวันหมดอายุของในบ้านร่วมกับคนในบ้าน",
+  "lang": "th",
+  "start_url": "pantry.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7fcf77",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#e8e8e8"/>
+  <rect x="90" y="70" width="120" height="160" rx="16" fill="#a8e6a1"/>
+  <rect x="120" y="50" width="60" height="30" rx="8" fill="#7fcf77"/>
+  <text x="150" y="260" font-family="sans-serif" font-size="16" fill="#777777" text-anchor="middle">ไม่มีรูปภาพ</text>
+</svg>

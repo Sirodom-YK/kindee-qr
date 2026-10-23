@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinDee QR — สแกนดูข้อมูลอาหาร ผัก ผลไม้ และขนม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="home">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>KinDee QR</h1>
+      <p>ตรวจสอบส่วนประกอบ สารก่อภูมิแพ้ และโภชนาการของอาหาร ขนม ผัก และผลไม้ ด้วยการสแกนบาร์โค้ด/QR Code หรือถ่ายรูป</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="scan.html">สแกน / ถ่ายรูป</a>
+        <a class="btn btn-secondary" href="search.html">ค้นหาสินค้า</a>
+        <a class="btn btn-secondary" href="pantry.html">🏠 ของในบ้าน</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>สินค้าตัวอย่าง</h2>
+      <div class="product-grid" id="product-grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>เกี่ยวกับโปรเจกต์</h2>
+      <p>
+        ข้อมูลผลิตภัณฑ์ที่แสดงบนเว็บไซต์นี้มาจากฐานข้อมูลที่ตรวจสอบได้ เช่น ฐานข้อมูลของระบบเอง
+        ฐานข้อมูลสาธารณะ Open Food Facts (สินค้าที่มีบาร์โค้ด) และ USDA FoodData Central (โภชนาการของผักผลไม้สด)
+        เท่านั้น ระบบ AI ถูกใช้เพื่อ <strong>แปลและอธิบาย</strong> ข้อมูลที่มีอยู่จริง และช่วยระบุชนิดผักผลไม้จากภาพ
+        โดยจะไม่สร้างหรือคาดเดาส่วนประกอบ ค่าโภชนาการ หรือคำเตือนขึ้นมาเอง
+        และจะไม่ยืนยันว่าสินค้าเป็นของแท้หรือปลอดภัยเพียงเพราะสแกนได้
+      </p>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/product-card.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

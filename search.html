@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ค้นหาสินค้า — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="search">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>ค้นหาสินค้า</h1>
+      <p>ค้นหาด้วยชื่อสินค้า แบรนด์ หรือเลขบาร์โค้ด ในระบบ KinDee QR และ Open Food Facts</p>
+    </section>
+
+    <section class="card">
+      <form id="search-form">
+        <input type="text" id="search-input" placeholder="เช่น มันฝรั่งทอด, Nutella หรือ 8850123456781">
+        <button type="submit" class="btn btn-primary">ค้นหา</button>
+      </form>
+    </section>
+
+    <section id="search-result"></section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/product-card.js"></script>
+  <script src="js/search.js"></script>
+</body>
+</html>

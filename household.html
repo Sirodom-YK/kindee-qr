@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บ้านของฉัน — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="account">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>บ้านของฉัน</h1>
+      <p>สร้างบ้าน แล้วเชิญคนในบ้านหรือรูมเมทมาใช้รายการของร่วมกัน ทุกคนในบ้านเห็นและแก้ของชุดเดียวกัน</p>
+    </section>
+
+    <p id="household-status" class="text-muted">กำลังโหลด...</p>
+
+    <!-- เปิดจากลิงก์เชิญ household.html?join=XXXXXXXX -->
+    <section id="join-invite-section" class="card" style="display:none;">
+      <h2>คุณได้รับคำเชิญเข้าบ้าน</h2>
+      <form id="join-invite-form" class="admin-form">
+        <label>รหัสเชิญ<input type="text" id="join-invite-code" required maxlength="8" readonly></label>
+        <label>ชื่อที่คนในบ้านจะเห็น<input type="text" id="join-invite-name" required maxlength="50"></label>
+        <button type="submit" class="btn btn-primary">เข้าร่วมบ้านนี้</button>
+      </form>
+    </section>
+
+    <section id="household-panel" style="display:none;">
+      <section class="card">
+        <label id="household-switch-label" class="admin-form" style="display:none;">เลือกบ้าน
+          <select id="household-switch"></select>
+        </label>
+        <h2 id="household-name"></h2>
+        <h3>สมาชิก</h3>
+        <ul id="member-list" class="member-list"></ul>
+      </section>
+
+      <section class="card">
+        <h3>เชิญคนเข้าบ้าน</h3>
+        <p class="text-muted">ลิงก์เชิญใช้ได้ 7 วัน ส่งให้เฉพาะคนที่ต้องการให้เข้ามาใช้รายการของร่วมกัน</p>
+        <button type="button" id="create-invite-btn" class="btn btn-primary">สร้างลิงก์เชิญ</button>
+        <div id="invite-result" style="display:none;">
+          <p>รหัสเชิญ: <strong id="invite-code"></strong></p>
+          <div id="invite-link-form">
+            <input type="text" id="invite-link" readonly>
+            <button type="button" id="copy-invite-btn" class="btn btn-secondary">คัดลอกลิงก์</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>ออกจากบ้าน</h3>
+        <p class="text-muted">ถ้าคุณเป็นสมาชิกคนสุดท้าย บ้านและรายการของทั้งหมดจะถูกลบด้วย</p>
+        <button type="button" id="leave-household-btn" class="btn btn-secondary">ออกจากบ้านนี้</button>
+      </section>
+    </section>
+
+    <section id="add-household-section">
+      <div class="hero-actions" id="add-household-toggle" style="display:none;">
+        <button type="button" class="btn btn-secondary" id="show-add-household-btn">+ สร้าง/เข้าร่วมบ้านอื่น</button>
+      </div>
+      <div id="add-household-forms">
+        <section class="card">
+          <h2>สร้างบ้านใหม่</h2>
+          <form id="create-household-form" class="admin-form">
+            <label>ชื่อบ้าน<input type="text" id="new-household-name" required maxlength="100" placeholder="เช่น หอ A ห้อง 302"></label>
+            <label>ชื่อที่คนในบ้านจะเห็น<input type="text" id="new-household-display" required maxlength="50" placeholder="เช่น บุ๋น"></label>
+            <button type="submit" class="btn btn-primary">สร้างบ้าน</button>
+          </form>
+        </section>
+        <section class="card">
+          <h2>เข้าร่วมบ้านด้วยรหัสเชิญ</h2>
+          <form id="join-household-form" class="admin-form">
+            <label>รหัสเชิญ 8 ตัว<input type="text" id="join-code" required maxlength="8" autocomplete="off"></label>
+            <label>ชื่อที่คนในบ้านจะเห็น<input type="text" id="join-display" required maxlength="50"></label>
+            <button type="submit" class="btn btn-primary">เข้าร่วม</button>
+          </form>
+        </section>
+      </div>
+    </section>
+
+    <!-- ตั้งค่าแจ้งเตือน Web Push (js/push.js) -->
+    <section id="notification-section" class="card" style="display:none;"></section>
+
+    <section class="card">
+      <h3>บัญชี</h3>
+      <p class="text-muted" id="account-email"></p>
+      <button type="button" id="logout-btn" class="btn btn-secondary">ออกจากระบบ</button>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/pantry-common.js"></script>
+  <script src="js/household.js"></script>
+  <script src="js/push-config.js"></script>
+  <script src="js/push.js"></script>
+</body>
+</html>

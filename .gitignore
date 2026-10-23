@@ -1,0 +1,14 @@
+# ข้อมูลการเชื่อมต่อของ Supabase CLI (มีที่อยู่ฐานข้อมูล) — ห้ามขึ้น repo สาธารณะ
+supabase/.temp/
+
+# มี CRON_SECRET จริง — ใช้ supabase/cron.example.sql เป็นต้นแบบแทน
+supabase/cron.sql
+
+# ไฟล์ secrets ของ Supabase / env ถ้ามีในอนาคต
+.env
+.env.*
+supabase/.env
+supabase/functions/.env
+
+node_modules/
+*.log

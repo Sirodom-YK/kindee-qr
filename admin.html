@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="admin">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Admin</h1>
+      <p>สำหรับผู้ดูแลระบบจัดการข้อมูลสินค้าเท่านั้น ต้องเข้าสู่ระบบก่อนใช้งาน</p>
+    </section>
+
+    <section id="login-section" class="card">
+      <h2>เข้าสู่ระบบผู้ดูแล</h2>
+      <form id="login-form" class="admin-form">
+        <label>อีเมล<input type="email" id="login-email" required></label>
+        <label>รหัสผ่าน<input type="password" id="login-password" required></label>
+        <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+      </form>
+      <p id="login-error" class="text-muted" style="display:none;"></p>
+    </section>
+
+    <section id="not-admin-section" class="card" style="display:none;">
+      <h2>บัญชีนี้ไม่ใช่ผู้ดูแลระบบ</h2>
+      <p class="text-muted">หน้านี้สำหรับผู้ดูแลเท่านั้น ถ้าต้องการจัดการของในบ้าน ไปที่หน้า "ของในบ้าน"</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="pantry.html">ไปหน้าของในบ้าน</a>
+        <button type="button" id="not-admin-logout-btn" class="btn btn-secondary">ออกจากระบบ</button>
+      </div>
+    </section>
+
+    <section id="admin-panel" style="display:none;">
+      <div class="hero-actions" style="justify-content: space-between;">
+        <h2>จัดการสินค้า</h2>
+        <button type="button" id="logout-btn" class="btn btn-secondary">ออกจากระบบ</button>
+      </div>
+
+      <section class="card">
+        <h3>ข้อมูลจากผู้ใช้ที่รอตรวจสอบ</h3>
+        <p class="text-muted">
+          ผู้ใช้ส่งเข้ามาจากหน้า "ส่งข้อมูลสินค้า" ยังไม่แสดงบนเว็บ — ตรวจกับฉลากหรือแหล่งที่เชื่อถือได้ก่อนอนุมัติ
+        </p>
+        <div id="submission-list"></div>
+      </section>
+
+      <button type="button" id="add-product-btn" class="btn btn-primary">+ เพิ่มสินค้าใหม่</button>
+
+      <div id="product-form-section" class="card" style="display:none;">
+        <h3 id="form-title">เพิ่มสินค้าใหม่</h3>
+        <p id="form-submission-notice" class="warning-box" style="display:none;">
+          กำลังอนุมัติข้อมูลที่ผู้ใช้ส่งมา — ตรวจและแก้ไขให้ถูกต้องตามฉลากก่อนกดบันทึก
+          ข้อมูลจะแสดงบนเว็บหลังบันทึกเท่านั้น
+        </p>
+        <form id="product-form" class="admin-form">
+          <label>ชื่อสินค้า<input type="text" id="field-name" required></label>
+          <label>แบรนด์<input type="text" id="field-brand"></label>
+          <label>บาร์โค้ด<input type="text" id="field-barcode"></label>
+          <label>QR Code Value<input type="text" id="field-qr"></label>
+          <div class="submit-image">
+            <img id="field-image-preview" src="assets/images/placeholder-product.svg" alt="รูปสินค้า">
+            <div>
+              <p id="field-image-status" class="text-muted">ยังไม่มีรูปสินค้า</p>
+              <div class="hero-actions">
+                <label class="btn btn-secondary" for="field-image-camera">📷 ถ่ายรูป</label>
+                <label class="btn btn-secondary" for="field-image-file">🖼️ เลือกจากเครื่อง</label>
+                <button type="button" class="btn btn-secondary" id="field-image-clear">ไม่ใช้รูป</button>
+              </div>
+              <input type="file" id="field-image-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="field-image-file" accept="image/*" style="display:none;">
+            </div>
+          </div>
+          <label>หรือใส่ URL รูปภาพ<input type="text" id="field-image"></label>
+          <label>หมวดหมู่
+            <select id="field-category">
+              <option value="">— ไม่ระบุ —</option>
+              <option value="packaged">อาหารแปรรูป/บรรจุภัณฑ์</option>
+              <option value="snack">ขนม</option>
+              <option value="beverage">เครื่องดื่ม</option>
+              <option value="vegetable">ผัก</option>
+              <option value="fruit">ผลไม้</option>
+              <option value="other">อื่น ๆ</option>
+            </select>
+          </label>
+          <label>ประเภทสินค้า<input type="text" id="field-type"></label>
+          <label>ส่วนประกอบ<textarea id="field-ingredients"></textarea></label>
+          <label>สารก่อภูมิแพ้<textarea id="field-allergens"></textarea></label>
+          <fieldset>
+            <legend>ข้อมูลโภชนาการต่อ 100 กรัม (เว้นว่างถ้าไม่มีข้อมูล)</legend>
+            <label>พลังงาน (kcal)<input type="number" step="any" min="0" data-nutrient="energy_kcal"></label>
+            <label>โปรตีน (g)<input type="number" step="any" min="0" data-nutrient="protein_g"></label>
+            <label>ไขมัน (g)<input type="number" step="any" min="0" data-nutrient="fat_g"></label>
+            <label>คาร์โบไฮเดรต (g)<input type="number" step="any" min="0" data-nutrient="carbohydrates_g"></label>
+            <label>น้ำตาล (g)<input type="number" step="any" min="0" data-nutrient="sugars_g"></label>
+            <label>ใยอาหาร (g)<input type="number" step="any" min="0" data-nutrient="fiber_g"></label>
+            <label>โซเดียม (mg)<input type="number" step="any" min="0" data-nutrient="sodium_mg"></label>
+          </fieldset>
+          <label>วิธีเก็บรักษา/รับประทาน<textarea id="field-usage"></textarea></label>
+          <label>คำเตือน<textarea id="field-warnings"></textarea></label>
+          <label>แหล่งที่มา (URL)<input type="text" id="field-source"></label>
+          <div class="hero-actions">
+            <button type="submit" class="btn btn-primary">บันทึก</button>
+            <button type="button" id="cancel-form-btn" class="btn btn-secondary">ยกเลิก</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="product-list"></div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/image-utils.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

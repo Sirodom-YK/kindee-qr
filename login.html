@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เข้าสู่ระบบ — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="account">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>บัญชี KinDee QR</h1>
+      <p>เข้าสู่ระบบเพื่อบันทึกของในบ้าน ติดตามวันหมดอายุ และใช้ร่วมกับคนในบ้านหรือรูมเมท</p>
+    </section>
+
+    <div class="hero-actions" id="auth-tabs">
+      <button type="button" class="btn btn-primary" data-tab="login">เข้าสู่ระบบ</button>
+      <button type="button" class="btn btn-secondary" data-tab="signup">สมัครสมาชิก</button>
+      <button type="button" class="btn btn-secondary" data-tab="forgot">ลืมรหัสผ่าน</button>
+    </div>
+
+    <section class="card auth-panel" id="panel-login">
+      <form id="login-form" class="admin-form">
+        <label>อีเมล<input type="email" id="login-email" required autocomplete="email"></label>
+        <label>รหัสผ่าน<input type="password" id="login-password" required autocomplete="current-password"></label>
+        <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+      </form>
+    </section>
+
+    <section class="card auth-panel" id="panel-signup" style="display:none;">
+      <form id="signup-form" class="admin-form">
+        <label>อีเมล<input type="email" id="signup-email" required autocomplete="email"></label>
+        <label>รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)<input type="password" id="signup-password" required minlength="8" autocomplete="new-password"></label>
+        <label>ยืนยันรหัสผ่าน<input type="password" id="signup-password2" required minlength="8" autocomplete="new-password"></label>
+        <button type="submit" class="btn btn-primary">สมัครสมาชิก</button>
+      </form>
+    </section>
+
+    <section class="card auth-panel" id="panel-forgot" style="display:none;">
+      <form id="forgot-form" class="admin-form">
+        <p class="text-muted">กรอกอีเมลที่ใช้สมัคร ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้</p>
+        <label>อีเมล<input type="email" id="forgot-email" required autocomplete="email"></label>
+        <button type="submit" class="btn btn-primary">ส่งลิงก์ตั้งรหัสผ่านใหม่</button>
+      </form>
+    </section>
+
+    <!-- แสดงเมื่อกดลิงก์ตั้งรหัสผ่านใหม่จากอีเมล -->
+    <section class="card auth-panel" id="panel-reset" style="display:none;">
+      <form id="reset-form" class="admin-form">
+        <h2>ตั้งรหัสผ่านใหม่</h2>
+        <label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)<input type="password" id="reset-password" required minlength="8" autocomplete="new-password"></label>
+        <button type="submit" class="btn btn-primary">บันทึกรหัสผ่านใหม่</button>
+      </form>
+    </section>
+
+    <p id="auth-status" style="display:none;"></p>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

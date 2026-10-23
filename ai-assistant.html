@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Assistant — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="ai-assistant">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>AI Assistant</h1>
+      <p>
+        ผู้ช่วย AI สำหรับแปลและอธิบายข้อมูลสินค้าที่มีอยู่ในระบบให้เข้าใจง่ายขึ้น
+        AI จะไม่สร้างข้อมูลที่ไม่มีอยู่จริง และไม่ยืนยันความแท้หรือความปลอดภัยของสินค้า
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>เลือกสินค้า</h2>
+      <p class="text-muted">
+        กรอกรหัสสินค้า (id) หรือบาร์โค้ด หรือกดปุ่ม "ให้ AI ช่วยอธิบายข้อมูลนี้" จากหน้ารายละเอียดสินค้า
+      </p>
+      <form id="load-product-form">
+        <input type="text" id="product-lookup-input" placeholder="รหัสสินค้า (id) หรือบาร์โค้ด">
+        <button type="submit" class="btn btn-primary">โหลดข้อมูลสินค้า</button>
+      </form>
+    </section>
+
+    <section id="product-context" class="card" style="display:none;"></section>
+
+    <section id="ai-actions" class="card" style="display:none;">
+      <h2>ให้ AI ช่วย</h2>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-secondary" data-action="explain_ingredients" data-field="ingredients">อธิบายส่วนประกอบ</button>
+        <button type="button" class="btn btn-secondary" data-action="summarize_nutrition" data-field="nutrition">สรุปข้อมูลโภชนาการ</button>
+        <button type="button" class="btn btn-secondary" data-action="translate_to_english" data-field="ingredients">แปลส่วนประกอบเป็นอังกฤษ</button>
+        <button type="button" class="btn btn-secondary" data-action="translate_to_thai" data-field="ingredients">แปลส่วนประกอบเป็นไทย</button>
+      </div>
+    </section>
+
+    <section id="ai-result" class="card" style="display:none;"></section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/ai-assistant.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ส่งข้อมูลสินค้า — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="submit">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>ช่วยเพิ่มข้อมูลสินค้า</h1>
+      <p>
+        ไม่พบข้อมูลสินค้านี้ หรือข้อมูลยังไม่ครบ? พิมพ์ข้อมูลตามฉลากจริงบนบรรจุภัณฑ์ส่งให้เราได้
+        ทีมงานจะตรวจสอบก่อน และจะแสดงบนเว็บไซต์หลังจากอนุมัติแล้วเท่านั้น
+      </p>
+    </section>
+
+    <section id="submit-form-section" class="card">
+      <p id="edit-mode-notice" class="warning-box" style="display:none;"></p>
+      <form id="submit-form" class="admin-form">
+        <div class="submit-image">
+          <img id="sub-image-preview" src="assets/images/placeholder-product.svg" alt="รูปสินค้า">
+          <div>
+            <p id="sub-image-status" class="text-muted">ยังไม่มีรูปสินค้า</p>
+            <div class="hero-actions">
+              <label class="btn btn-secondary" for="sub-image-camera">📷 ถ่ายรูป</label>
+              <label class="btn btn-secondary" for="sub-image-file">🖼️ เลือกจากเครื่อง</label>
+              <button type="button" class="btn btn-secondary" id="sub-image-reset" style="display:none;">ใช้รูปเดิม</button>
+            </div>
+            <!-- แยก 2 ช่อง: capture บังคับเปิดกล้องบนมือถือ ส่วนช่องที่ไม่มี capture เลือกจากคลังรูป/ไฟล์ได้ -->
+            <input type="file" id="sub-image-camera" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="sub-image-file" accept="image/*" style="display:none;">
+          </div>
+        </div>
+        <label>บาร์โค้ด (ถ้ามี)<input type="text" id="sub-barcode" inputmode="numeric" maxlength="64"></label>
+        <label>ชื่อสินค้า *<input type="text" id="sub-name" required maxlength="200"></label>
+        <label>แบรนด์<input type="text" id="sub-brand" maxlength="200"></label>
+        <label>หมวดหมู่
+          <select id="sub-category">
+            <option value="">— ไม่ระบุ —</option>
+            <option value="packaged">อาหารแปรรูป/บรรจุภัณฑ์</option>
+            <option value="snack">ขนม</option>
+            <option value="beverage">เครื่องดื่ม</option>
+            <option value="vegetable">ผัก</option>
+            <option value="fruit">ผลไม้</option>
+            <option value="other">อื่น ๆ</option>
+          </select>
+        </label>
+        <label>ส่วนประกอบ (ตามฉลาก)<textarea id="sub-ingredients" maxlength="4000"></textarea></label>
+        <label>สารก่อภูมิแพ้ (ตามฉลาก)<textarea id="sub-allergens" maxlength="1000"></textarea></label>
+        <fieldset>
+          <legend>ข้อมูลโภชนาการต่อ 100 กรัม/มล. (เว้นว่างถ้าไม่แน่ใจ)</legend>
+          <label>พลังงาน (kcal)<input type="number" step="any" min="0" data-nutrient="energy_kcal"></label>
+          <label>โปรตีน (g)<input type="number" step="any" min="0" data-nutrient="protein_g"></label>
+          <label>ไขมัน (g)<input type="number" step="any" min="0" data-nutrient="fat_g"></label>
+          <label>คาร์โบไฮเดรต (g)<input type="number" step="any" min="0" data-nutrient="carbohydrates_g"></label>
+          <label>น้ำตาล (g)<input type="number" step="any" min="0" data-nutrient="sugars_g"></label>
+          <label>ใยอาหาร (g)<input type="number" step="any" min="0" data-nutrient="fiber_g"></label>
+          <label>โซเดียม (mg)<input type="number" step="any" min="0" data-nutrient="sodium_mg"></label>
+        </fieldset>
+        <label>วิธีเก็บรักษา/รับประทาน<textarea id="sub-usage" maxlength="2000"></textarea></label>
+        <label>คำเตือนบนฉลาก<textarea id="sub-warnings" maxlength="2000"></textarea></label>
+        <label>หมายเหตุถึงทีมงาน<textarea id="sub-note" maxlength="1000" placeholder="เช่น ขนาดบรรจุ หรือซื้อจากที่ไหน"></textarea></label>
+        <!-- ช่องกับดักบอท: คนมองไม่เห็น ถ้ามีค่าแปลว่าเป็นบอทกรอกอัตโนมัติ -->
+        <label class="hp-field" aria-hidden="true">เว็บไซต์<input type="text" id="sub-website" tabindex="-1" autocomplete="off"></label>
+        <p class="text-muted">กรุณากรอกเฉพาะข้อมูลที่เห็นบนฉลากจริง ไม่ต้องใส่ข้อมูลส่วนตัว</p>
+        <button type="submit" class="btn btn-primary">ส่งข้อมูลให้ทีมงานตรวจสอบ</button>
+      </form>
+      <p id="submit-status" style="display:none;"></p>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/image-utils.js"></script>
+  <script src="js/submit.js"></script>
+</body>
+</html>

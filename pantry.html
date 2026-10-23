@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ของในบ้าน — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="pantry">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>ของในบ้าน</h1>
+      <p id="pantry-household-line" class="text-muted">กำลังโหลด...</p>
+    </section>
+
+    <!-- ยังไม่มีบ้าน -->
+    <section id="no-household" class="card" style="display:none;">
+      <h2>ยังไม่มีบ้าน</h2>
+      <p>สร้างบ้านของคุณ หรือเข้าร่วมบ้านของรูมเมทด้วยรหัสเชิญ แล้วค่อยเริ่มบันทึกของ</p>
+      <a class="btn btn-primary" href="household.html">ไปสร้าง/เข้าร่วมบ้าน</a>
+    </section>
+
+    <section id="pantry-panel" style="display:none;">
+      <div id="expiry-banner" class="warning-box" style="display:none;"></div>
+
+      <div class="pantry-toolbar">
+        <button type="button" id="add-item-btn" class="btn btn-primary">+ เพิ่มของ</button>
+        <select id="filter-location" aria-label="กรองตามที่เก็บ">
+          <option value="">ทุกที่เก็บ</option>
+        </select>
+        <select id="filter-type" aria-label="กรองตามประเภท">
+          <option value="">ทุกประเภท</option>
+        </select>
+        <a class="btn btn-secondary" href="pantry-report.html">📊 รายงาน</a>
+      </div>
+
+      <!-- ฟอร์มเพิ่ม/แก้ไขของ -->
+      <section id="item-form-section" class="card" style="display:none;">
+        <h2 id="item-form-title">เพิ่มของ</h2>
+
+        <div id="item-lookup">
+          <p class="text-muted">สแกนหรือพิมพ์บาร์โค้ดเพื่อเติมชื่อและรูปให้อัตโนมัติ หรือข้ามไปกรอกเองด้านล่างได้เลย</p>
+          <div class="hero-actions">
+            <button type="button" id="start-scan-btn" class="btn btn-secondary">📷 สแกนบาร์โค้ด</button>
+          </div>
+          <div id="pantry-qr-reader"></div>
+          <form id="item-code-form">
+            <input type="text" id="item-code-input" inputmode="numeric" autocomplete="off" placeholder="หรือพิมพ์เลขบาร์โค้ด">
+            <button type="submit" class="btn btn-secondary">ค้นหา</button>
+          </form>
+          <p id="item-lookup-status" class="text-muted" style="display:none;"></p>
+        </div>
+
+        <form id="item-form" class="admin-form">
+          <div class="submit-image">
+            <img id="item-image-preview" src="assets/images/placeholder-product.svg" alt="รูปของ">
+            <div>
+              <div class="hero-actions">
+                <label class="btn btn-secondary" for="item-image-camera">📷 ถ่ายรูป</label>
+                <label class="btn btn-secondary" for="item-image-file">🖼️ เลือกจากเครื่อง</label>
+              </div>
+              <input type="file" id="item-image-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="item-image-file" accept="image/*" style="display:none;">
+            </div>
+          </div>
+
+          <label>ชื่อของ *<input type="text" id="item-name" required maxlength="200"></label>
+          <label>ประเภท<select id="item-type"></select></label>
+          <label>ที่เก็บ<select id="item-location"></select></label>
+          <div class="form-row">
+            <label>จำนวน<input type="number" id="item-quantity" min="0" step="any" value="1" required></label>
+            <label>หน่วย<input type="text" id="item-unit" maxlength="20" value="ชิ้น" list="unit-options" required></label>
+            <datalist id="unit-options">
+              <option value="ชิ้น"><option value="ขวด"><option value="กล่อง"><option value="ถุง">
+              <option value="แพ็ก"><option value="หลอด"><option value="แผง"><option value="กระป๋อง">
+            </datalist>
+          </div>
+
+          <fieldset>
+            <legend>วันหมดอายุ</legend>
+            <div id="expiry-ocr-area">
+              <p class="text-muted">ถ่ายรูปวันที่บนฉลากให้ AI อ่าน หรือกรอกเองในช่องด้านล่าง</p>
+              <div class="hero-actions">
+                <label class="btn btn-secondary" for="expiry-photo-camera">📷 ถ่ายรูปวันที่</label>
+                <label class="btn btn-secondary" for="expiry-photo-file">🖼️ เลือกรูปวันที่</label>
+              </div>
+              <input type="file" id="expiry-photo-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="expiry-photo-file" accept="image/*" style="display:none;">
+              <div id="expiry-ocr-result" style="display:none;"></div>
+            </div>
+            <div class="form-row">
+              <label>วันที่<input type="date" id="item-expiry"></label>
+              <label>ชนิดวันที่
+                <select id="item-date-kind">
+                  <option value="exp">หมดอายุ (EXP)</option>
+                  <option value="bbe">ควรบริโภคก่อน (BBE)</option>
+                </select>
+              </label>
+            </div>
+            <label class="checkbox-label"><input type="checkbox" id="item-no-expiry"> ไม่มีวันหมดอายุบนฉลาก</label>
+          </fieldset>
+
+          <label>หมายเหตุ<textarea id="item-note" maxlength="500" placeholder="เช่น เปิดแล้ว ใช้ภายใน 7 วัน"></textarea></label>
+
+          <div class="hero-actions">
+            <button type="submit" class="btn btn-primary">บันทึก</button>
+            <button type="button" id="cancel-item-btn" class="btn btn-secondary">ยกเลิก</button>
+            <button type="button" id="delete-item-btn" class="btn btn-secondary" style="display:none;">ลบรายการนี้</button>
+          </div>
+        </form>
+      </section>
+
+      <div id="pantry-groups"></div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/image-utils.js"></script>
+  <script src="js/barcode-scanner.js"></script>
+  <script src="js/pantry-common.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/expiry-date.js"></script>
+  <script src="js/pantry.js"></script>
+  <script src="js/pantry-ocr.js"></script>
+</body>
+</html>

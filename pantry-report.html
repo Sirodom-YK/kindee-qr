@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายงานของในบ้าน — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="pantry">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>รายงานของในบ้าน</h1>
+      <p id="report-household-line" class="text-muted">กำลังโหลด...</p>
+    </section>
+
+    <section id="report-panel" style="display:none;">
+      <div class="pantry-toolbar">
+        <label>เดือน <input type="month" id="report-month"></label>
+        <a class="btn btn-secondary" href="pantry.html">← กลับไปรายการของ</a>
+      </div>
+
+      <div class="stat-row" id="stat-row"></div>
+
+      <section class="card viz-root">
+        <h2>6 เดือนล่าสุด</h2>
+        <div class="chart-legend">
+          <span><i class="legend-swatch" style="background: var(--series-ontime);"></i>ใช้ทัน</span>
+          <span><i class="legend-swatch" style="background: var(--series-wasted);"></i>หมดอายุ/ทิ้ง</span>
+        </div>
+        <div id="month-chart" class="month-chart"></div>
+        <div id="chart-tooltip" class="chart-tooltip" role="status" style="display:none;"></div>
+        <details>
+          <summary>ดูเป็นตาราง</summary>
+          <table class="nutrition-table" id="month-table"></table>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>ประเภทที่ทิ้งบ่อย (เดือนที่เลือก)</h2>
+        <div id="wasted-types"></div>
+      </section>
+
+      <section class="card">
+        <h2>ของที่หมดอายุ/ทิ้ง (เดือนที่เลือก)</h2>
+        <div id="wasted-list"></div>
+      </section>
+    </section>
+
+    <section id="report-no-household" class="card" style="display:none;">
+      <p>ยังไม่มีบ้าน — <a href="household.html">สร้างหรือเข้าร่วมบ้าน</a> ก่อนดูรายงาน</p>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/pantry-common.js"></script>
+  <script src="js/pantry-report.js"></script>
+</body>
+</html>

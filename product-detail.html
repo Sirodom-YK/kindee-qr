@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายละเอียดสินค้า — KinDee QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fcf77">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-page="product-detail">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div id="product-detail" style="display:none;"></div>
+
+    <div id="product-not-found" class="not-found" style="display:none;">
+      <h1>ไม่พบข้อมูลสินค้า</h1>
+      <p>ขออภัย ไม่พบข้อมูลสินค้าที่คุณต้องการในระบบ</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="search.html">ค้นหาสินค้า</a>
+        <a class="btn btn-secondary" id="not-found-submit-link" href="submit.html">ส่งข้อมูลสินค้านี้ให้เรา</a>
+        <a class="btn btn-secondary" href="index.html">กลับหน้าแรก</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/nutrition.js"></script>
+  <script src="js/openfoodfacts.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/product-detail.js"></script>
+</body>
+</html>
