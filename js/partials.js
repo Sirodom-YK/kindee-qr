@@ -7,8 +7,20 @@ async function loadPartials() {
   document.getElementById("site-header").innerHTML = headerHtml;
   document.getElementById("site-footer").innerHTML = footerHtml;
 
+  // แปลง <i data-icon="..."> ทั้งหน้า (รวม header/footer ที่เพิ่งใส่) เป็น SVG — ดู js/icons.js
+  renderStaticIcons();
   highlightActiveNav();
   await updateAccountNav();
+}
+
+function highlightActiveNav() {
+  const currentPage = document.body.dataset.page;
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    if (link.dataset.page === currentPage) {
+      link.classList.add("active");
+      link.setAttribute("aria-current", "page");
+    }
+  });
 }
 
 // เมนูบัญชี: login แล้วไปหน้าบ้านของฉัน ยังไม่ login ไปหน้าเข้าสู่ระบบ
@@ -20,17 +32,10 @@ async function updateAccountNav() {
   const { data } = await supabaseClient.auth.getSession();
   if (data.session) {
     link.href = "household.html";
-    link.textContent = "บ้านของฉัน";
   }
 }
 
-function highlightActiveNav() {
-  const currentPage = document.body.dataset.page;
-  document.querySelectorAll(".nav-link").forEach((link) => {
-    if (link.dataset.page === currentPage) {
-      link.classList.add("active");
-    }
-  });
-}
+// ไอคอนในเนื้อหาของหน้า (นอก header/footer) แสดงได้ทันทีโดยไม่ต้องรอ fetch
+document.addEventListener("DOMContentLoaded", () => renderStaticIcons());
 
 loadPartials();

@@ -5,77 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ของในบ้าน — KinDee QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7fcf77">
+<meta name="theme-color" content="#1d3a6e">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body data-page="pantry">
   <div id="site-header"></div>
 
   <main class="container">
-    <section class="hero">
-      <h1>ของในบ้าน</h1>
-      <p id="pantry-household-line" class="text-muted">กำลังโหลด...</p>
+    <section class="page-head">
+      <div>
+        <h1>ของในบ้าน</h1>
+        <div id="pantry-household-line" class="household-line text-muted">กำลังโหลด...</div>
+      </div>
+      <a class="btn btn-secondary btn-small" href="pantry-report.html"><i data-icon="chart-column" data-size="18"></i>รายงาน</a>
     </section>
 
     <!-- ยังไม่มีบ้าน -->
-    <section id="no-household" class="card" style="display:none;">
+    <section id="no-household" class="card empty-state" style="display:none;">
+      <i data-icon="users" data-size="40"></i>
       <h2>ยังไม่มีบ้าน</h2>
       <p>สร้างบ้านของคุณ หรือเข้าร่วมบ้านของรูมเมทด้วยรหัสเชิญ แล้วค่อยเริ่มบันทึกของ</p>
-      <a class="btn btn-primary" href="household.html">ไปสร้าง/เข้าร่วมบ้าน</a>
+      <a class="btn btn-primary" href="household.html"><i data-icon="user-plus"></i>สร้าง/เข้าร่วมบ้าน</a>
     </section>
 
     <section id="pantry-panel" style="display:none;">
-      <div id="expiry-banner" class="warning-box" style="display:none;"></div>
+      <!-- สรุปจำนวน: แตะเพื่อกรองดูเฉพาะกลุ่มนั้น -->
+      <div class="summary-strip" id="summary-strip"></div>
 
-      <div class="pantry-toolbar">
-        <button type="button" id="add-item-btn" class="btn btn-primary">+ เพิ่มของ</button>
-        <select id="filter-location" aria-label="กรองตามที่เก็บ">
-          <option value="">ทุกที่เก็บ</option>
-        </select>
-        <select id="filter-type" aria-label="กรองตามประเภท">
-          <option value="">ทุกประเภท</option>
-        </select>
-        <a class="btn btn-secondary" href="pantry-report.html">📊 รายงาน</a>
+      <div class="filter-bar">
+        <div class="chip-group chip-scroll" id="filter-location" aria-label="กรองตามที่เก็บ"></div>
+        <div class="chip-group chip-scroll" id="filter-type" aria-label="กรองตามประเภท"></div>
       </div>
 
-      <!-- ฟอร์มเพิ่ม/แก้ไขของ -->
+      <!-- ฟอร์มเพิ่ม/แก้ไขของ — เรียงจากสิ่งที่ต้องกรอกเสมอ (ชื่อ, วันหมดอายุ) ไปสิ่งที่ไม่บังคับ -->
       <section id="item-form-section" class="card" style="display:none;">
-        <h2 id="item-form-title">เพิ่มของ</h2>
+        <div class="page-head">
+          <h2 id="item-form-title">เพิ่มของ</h2>
+          <button type="button" id="close-item-btn" class="icon-btn" aria-label="ปิดฟอร์ม"><i data-icon="x"></i></button>
+        </div>
 
         <div id="item-lookup">
-          <p class="text-muted">สแกนหรือพิมพ์บาร์โค้ดเพื่อเติมชื่อและรูปให้อัตโนมัติ หรือข้ามไปกรอกเองด้านล่างได้เลย</p>
-          <div class="hero-actions">
-            <button type="button" id="start-scan-btn" class="btn btn-secondary">📷 สแกนบาร์โค้ด</button>
+          <div class="hero-actions" style="margin-top: 0;">
+            <button type="button" id="start-scan-btn" class="btn btn-primary"><i data-icon="scan-barcode"></i>สแกนบาร์โค้ด</button>
           </div>
           <div id="pantry-qr-reader"></div>
-          <form id="item-code-form">
-            <input type="text" id="item-code-input" inputmode="numeric" autocomplete="off" placeholder="หรือพิมพ์เลขบาร์โค้ด">
-            <button type="submit" class="btn btn-secondary">ค้นหา</button>
+          <form id="item-code-form" style="margin-top: 8px;">
+            <input type="text" id="item-code-input" inputmode="numeric" autocomplete="off" placeholder="หรือพิมพ์เลขบาร์โค้ด" aria-label="เลขบาร์โค้ด">
+            <button type="submit" class="btn btn-secondary" aria-label="ค้นหาบาร์โค้ด"><i data-icon="search"></i></button>
           </form>
           <p id="item-lookup-status" class="text-muted" style="display:none;"></p>
         </div>
 
-        <form id="item-form" class="admin-form">
-          <div class="submit-image">
-            <img id="item-image-preview" src="assets/images/placeholder-product.svg" alt="รูปของ">
-            <div>
-              <div class="hero-actions">
-                <label class="btn btn-secondary" for="item-image-camera">📷 ถ่ายรูป</label>
-                <label class="btn btn-secondary" for="item-image-file">🖼️ เลือกจากเครื่อง</label>
-              </div>
-              <input type="file" id="item-image-camera" accept="image/*" capture="environment" style="display:none;">
-              <input type="file" id="item-image-file" accept="image/*" style="display:none;">
+        <form id="item-form" class="admin-form" style="margin-top: 16px;">
+          <label>ชื่อของ *<input type="text" id="item-name" required maxlength="200" placeholder="เช่น นม UHT, ยาพาราเซตามอล"></label>
+
+          <div class="field">
+            <span class="field-label">วันหมดอายุ</span>
+            <input type="date" id="item-expiry" aria-label="วันหมดอายุ">
+            <div class="chip-group chip-scroll date-shortcuts" id="date-shortcuts" aria-label="เลือกวันที่แบบเร็ว"></div>
+            <div id="expiry-ocr-area" class="hero-actions" style="margin-top: 8px;">
+              <label class="btn btn-secondary btn-small" for="expiry-photo-camera"><i data-icon="camera" data-size="18"></i>ถ่ายรูปวันที่</label>
+              <label class="btn btn-secondary btn-small" for="expiry-photo-file"><i data-icon="image" data-size="18"></i>เลือกรูปวันที่</label>
             </div>
+            <input type="file" id="expiry-photo-camera" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="expiry-photo-file" accept="image/*" style="display:none;">
+            <div id="expiry-ocr-result" style="display:none;"></div>
+            <div class="chip-group" id="item-date-kind" style="margin-top: 8px;" aria-label="ชนิดวันที่"></div>
+            <label class="checkbox-label"><input type="checkbox" id="item-no-expiry"> ไม่มีวันหมดอายุบนฉลาก</label>
           </div>
 
-          <label>ชื่อของ *<input type="text" id="item-name" required maxlength="200"></label>
-          <label>ประเภท<select id="item-type"></select></label>
-          <label>ที่เก็บ<select id="item-location"></select></label>
+          <div class="field">
+            <span class="field-label">ประเภท</span>
+            <div class="chip-group" id="item-type" aria-label="ประเภท"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">ที่เก็บ</span>
+            <div class="chip-group" id="item-location" aria-label="ที่เก็บ"></div>
+          </div>
+
           <div class="form-row">
-            <label>จำนวน<input type="number" id="item-quantity" min="0" step="any" value="1" required></label>
+            <div class="field">
+              <span class="field-label">จำนวน</span>
+              <div class="stepper">
+                <button type="button" id="qty-minus" aria-label="ลดจำนวน"><i data-icon="minus" data-size="18"></i></button>
+                <input type="number" id="item-quantity" min="0" step="any" value="1" required inputmode="decimal" aria-label="จำนวน">
+                <button type="button" id="qty-plus" aria-label="เพิ่มจำนวน"><i data-icon="plus" data-size="18"></i></button>
+              </div>
+            </div>
             <label>หน่วย<input type="text" id="item-unit" maxlength="20" value="ชิ้น" list="unit-options" required></label>
             <datalist id="unit-options">
               <option value="ชิ้น"><option value="ขวด"><option value="กล่อง"><option value="ถุง">
@@ -83,48 +104,38 @@
             </datalist>
           </div>
 
-          <fieldset>
-            <legend>วันหมดอายุ</legend>
-            <div id="expiry-ocr-area">
-              <p class="text-muted">ถ่ายรูปวันที่บนฉลากให้ AI อ่าน หรือกรอกเองในช่องด้านล่าง</p>
-              <div class="hero-actions">
-                <label class="btn btn-secondary" for="expiry-photo-camera">📷 ถ่ายรูปวันที่</label>
-                <label class="btn btn-secondary" for="expiry-photo-file">🖼️ เลือกรูปวันที่</label>
+          <details>
+            <summary>รูปและหมายเหตุ (ไม่บังคับ)</summary>
+            <div class="submit-image" style="margin-top: 8px;">
+              <img id="item-image-preview" src="assets/images/placeholder-product.svg" alt="รูปของ">
+              <div class="hero-actions" style="margin-top: 0;">
+                <label class="btn btn-secondary btn-small" for="item-image-camera"><i data-icon="camera" data-size="18"></i>ถ่ายรูป</label>
+                <label class="btn btn-secondary btn-small" for="item-image-file"><i data-icon="image" data-size="18"></i>เลือกจากเครื่อง</label>
               </div>
-              <input type="file" id="expiry-photo-camera" accept="image/*" capture="environment" style="display:none;">
-              <input type="file" id="expiry-photo-file" accept="image/*" style="display:none;">
-              <div id="expiry-ocr-result" style="display:none;"></div>
+              <input type="file" id="item-image-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="item-image-file" accept="image/*" style="display:none;">
             </div>
-            <div class="form-row">
-              <label>วันที่<input type="date" id="item-expiry"></label>
-              <label>ชนิดวันที่
-                <select id="item-date-kind">
-                  <option value="exp">หมดอายุ (EXP)</option>
-                  <option value="bbe">ควรบริโภคก่อน (BBE)</option>
-                </select>
-              </label>
-            </div>
-            <label class="checkbox-label"><input type="checkbox" id="item-no-expiry"> ไม่มีวันหมดอายุบนฉลาก</label>
-          </fieldset>
-
-          <label>หมายเหตุ<textarea id="item-note" maxlength="500" placeholder="เช่น เปิดแล้ว ใช้ภายใน 7 วัน"></textarea></label>
+            <label>หมายเหตุ<textarea id="item-note" maxlength="500" placeholder="เช่น เปิดแล้ว ใช้ภายใน 7 วัน"></textarea></label>
+          </details>
 
           <div class="hero-actions">
-            <button type="submit" class="btn btn-primary">บันทึก</button>
-            <button type="button" id="cancel-item-btn" class="btn btn-secondary">ยกเลิก</button>
-            <button type="button" id="delete-item-btn" class="btn btn-secondary" style="display:none;">ลบรายการนี้</button>
+            <button type="submit" class="btn btn-primary btn-block"><i data-icon="check"></i>บันทึก</button>
+            <button type="button" id="delete-item-btn" class="btn btn-secondary btn-danger-text" style="display:none;"><i data-icon="trash-2" data-size="18"></i>ลบรายการนี้ (บันทึกผิด)</button>
           </div>
         </form>
       </section>
 
       <div id="pantry-groups"></div>
     </section>
+
+    <button type="button" id="add-item-btn" class="fab" style="display:none;"><i data-icon="plus" data-size="22"></i>เพิ่มของ</button>
   </main>
 
   <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/partials.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>

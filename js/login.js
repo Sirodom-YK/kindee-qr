@@ -33,9 +33,9 @@ function showPanel(name) {
     panel.style.display = panel.id === `panel-${name}` ? "block" : "none";
   });
   document.querySelectorAll("#auth-tabs button").forEach((btn) => {
-    btn.className = `btn ${btn.dataset.tab === name ? "btn-primary" : "btn-secondary"}`;
+    btn.setAttribute("aria-selected", String(btn.dataset.tab === name));
   });
-  document.getElementById("auth-tabs").style.display = name === "reset" ? "none" : "flex";
+  document.getElementById("auth-tabs").style.display = name === "reset" ? "none" : "";
   setStatus("");
 }
 

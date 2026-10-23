@@ -94,9 +94,10 @@ function renderProduct(container, product, source) {
   const toolbar = document.createElement("div");
   toolbar.className = "detail-toolbar";
   const editLink = document.createElement("a");
-  editLink.className = "btn btn-secondary";
+  editLink.className = "btn btn-secondary btn-small";
   editLink.href = getSubmitProductUrl(product.barcode, product.name, product.id);
-  editLink.textContent = "✏️ แก้ไขข้อมูล";
+  editLink.appendChild(icon("pencil", { size: 16 }));
+  editLink.appendChild(document.createTextNode("แก้ไขข้อมูล"));
   editLink.title = "เสนอแก้ไขข้อมูลหรือรูปสินค้านี้ (ทีมงานจะตรวจสอบก่อนแสดง)";
   toolbar.appendChild(editLink);
   container.appendChild(toolbar);
@@ -134,7 +135,8 @@ function renderProduct(container, product, source) {
     aiLink.href = product.id
       ? `ai-assistant.html?id=${encodeURIComponent(product.id)}`
       : `ai-assistant.html?barcode=${encodeURIComponent(product.barcode)}`;
-    aiLink.textContent = "ให้ AI ช่วยอธิบายข้อมูลนี้";
+    aiLink.appendChild(icon("bot", { size: 18 }));
+    aiLink.appendChild(document.createTextNode("ให้ AI ช่วยอธิบาย"));
     container.appendChild(aiLink);
   }
 

@@ -1,13 +1,24 @@
 // หน้า "ของในบ้าน": รายการของของบ้านที่เลือก แยกกลุ่มตามวันหมดอายุ + ฟอร์มเพิ่ม/แก้ไข
 // ทุกคนในบ้านเห็นและแก้รายการชุดเดียวกัน — สิทธิ์บังคับด้วย RLS is_household_member() ใน supabase/pantry.sql
+// ออกแบบให้ใช้บนมือถือได้เร็ว: ตัวเลือกเป็นชิปแตะครั้งเดียว, วันที่มีทางลัด, ปุ่มเพิ่มลอยมุมขวาล่าง
 
 const PLACEHOLDER_IMAGE = "assets/images/placeholder-product.svg";
 
 const GROUPS = [
-  { status: "expired", title: "🔴 หมดอายุแล้ว" },
-  { status: "soon", title: `🟠 ใกล้หมดอายุ (ภายใน ${SOON_DAYS} วัน)` },
-  { status: "ok", title: "🟢 ยังอีกนาน" },
-  { status: "none", title: "⚪ ไม่ระบุวันหมดอายุ" },
+  { status: "expired", title: "หมดอายุแล้ว" },
+  { status: "soon", title: `ใกล้หมดอายุ (ภายใน ${SOON_DAYS} วัน)` },
+  { status: "ok", title: "ยังอีกนาน" },
+  { status: "none", title: "ไม่ระบุวันหมดอายุ" },
+];
+
+const DATE_SHORTCUTS = [
+  { label: "พรุ่งนี้", days: 1 },
+  { label: "+3 วัน", days: 3 },
+  { label: "+1 สัปดาห์", days: 7 },
+  { label: "+1 เดือน", months: 1 },
+  { label: "+3 เดือน", months: 3 },
+  { label: "+6 เดือน", months: 6 },
+  { label: "+1 ปี", months: 12 },
 ];
 
 const pantryState = {
@@ -15,6 +26,7 @@ const pantryState = {
   household: null,
   members: {}, // user_id → display_name ใช้แสดงว่าใครเพิ่มของ
   items: [],
+  statusFilter: "", // "" | "expired" | "soon" — ตั้งจากแถบสรุปด้านบน
   editingItem: null,
   // ข้อมูลจากการสแกน/พิมพ์บาร์โค้ด ใช้ผูกกับสินค้าในระบบ
   lookup: { barcode: null, productId: null, imageUrl: null },
@@ -25,17 +37,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   pantryState.user = await requireLogin();
   if (!pantryState.user) return;
 
-  fillSelect("filter-location", LOCATION_LABELS);
-  fillSelect("filter-type", ITEM_TYPE_LABELS);
-  fillSelect("item-location", LOCATION_LABELS);
-  fillSelect("item-type", ITEM_TYPE_LABELS);
+  renderChoiceChips(
+    document.getElementById("filter-location"),
+    labelsToOptions(LOCATION_LABELS, LOCATION_ICONS, "ทุกที่เก็บ"),
+    { onChange: renderItems }
+  );
+  renderChoiceChips(
+    document.getElementById("filter-type"),
+    labelsToOptions(ITEM_TYPE_LABELS, ITEM_TYPE_ICONS, "ทุกประเภท"),
+    { onChange: renderItems }
+  );
+  renderChoiceChips(
+    document.getElementById("item-type"),
+    labelsToOptions(ITEM_TYPE_LABELS, ITEM_TYPE_ICONS),
+    { value: "food" }
+  );
+  renderChoiceChips(
+    document.getElementById("item-location"),
+    labelsToOptions(LOCATION_LABELS, LOCATION_ICONS),
+    { value: "pantry" }
+  );
+  renderChoiceChips(
+    document.getElementById("item-date-kind"),
+    [
+      { value: "exp", label: "หมดอายุ (EXP)" },
+      { value: "bbe", label: "ควรบริโภคก่อน (BBE)" },
+    ],
+    { value: "exp" }
+  );
+  renderDateShortcuts();
 
   document.getElementById("add-item-btn").addEventListener("click", () => openItemForm(null));
-  document.getElementById("cancel-item-btn").addEventListener("click", closeItemForm);
+  document.getElementById("close-item-btn").addEventListener("click", closeItemForm);
   document.getElementById("delete-item-btn").addEventListener("click", handleDeleteItem);
   document.getElementById("item-form").addEventListener("submit", handleSaveItem);
-  document.getElementById("filter-location").addEventListener("change", renderItems);
-  document.getElementById("filter-type").addEventListener("change", renderItems);
   document.getElementById("start-scan-btn").addEventListener("click", () => {
     startBarcodeScanner("pantry-qr-reader", lookupCode);
   });
@@ -47,20 +82,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("item-no-expiry").addEventListener("change", (e) => {
     document.getElementById("item-expiry").disabled = e.target.checked;
   });
+  document.getElementById("qty-minus").addEventListener("click", () => stepQuantity(-1));
+  document.getElementById("qty-plus").addEventListener("click", () => stepQuantity(1));
   document.getElementById("item-image-camera").addEventListener("change", handleItemImageSelected);
   document.getElementById("item-image-file").addEventListener("change", handleItemImageSelected);
 
   await loadHousehold();
 });
 
-function fillSelect(id, labels) {
-  const select = document.getElementById(id);
-  Object.entries(labels).forEach(([value, label]) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = label;
-    select.appendChild(option);
+function renderDateShortcuts() {
+  const container = document.getElementById("date-shortcuts");
+  DATE_SHORTCUTS.forEach((shortcut) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = shortcut.label;
+    chip.addEventListener("click", () => setExpiryDate(addToToday(shortcut)));
+    container.appendChild(chip);
   });
+}
+
+// ใช้ทั้งปุ่มทางลัดและผลจาก OCR (js/pantry-ocr.js)
+function setExpiryDate(isoDate) {
+  document.getElementById("item-no-expiry").checked = false;
+  const input = document.getElementById("item-expiry");
+  input.disabled = false;
+  input.value = isoDate;
+}
+
+function stepQuantity(delta) {
+  const input = document.getElementById("item-quantity");
+  const next = Math.max(0, (Number(input.value) || 0) + delta);
+  input.value = String(next);
 }
 
 async function loadHousehold() {
@@ -76,6 +129,7 @@ async function loadHousehold() {
 
   renderHouseholdLine(line, households);
   document.getElementById("pantry-panel").style.display = "block";
+  document.getElementById("add-item-btn").style.display = "inline-flex";
   await Promise.all([loadMembers(), loadItems()]);
 }
 
@@ -83,6 +137,7 @@ async function loadHousehold() {
 // บ้านที่เลือกถูกจำไว้ (saveCurrentHouseholdId) หน้าบ้านของฉันและหน้ารายงานจึงใช้บ้านเดียวกัน
 function renderHouseholdLine(line, households) {
   line.textContent = "";
+  line.appendChild(icon("house", { size: 16 }));
 
   if (households.length > 1) {
     const select = document.createElement("select");
@@ -92,20 +147,21 @@ function renderHouseholdLine(line, households) {
     households.forEach((h) => {
       const option = document.createElement("option");
       option.value = h.id;
-      option.textContent = `🏠 ${h.name}`;
+      option.textContent = h.name;
       select.appendChild(option);
     });
     select.value = pantryState.household.id;
     select.addEventListener("change", () => switchHousehold(households, select.value));
     line.appendChild(select);
   } else {
-    line.appendChild(document.createTextNode(`🏠 ${pantryState.household.name}`));
+    const name = document.createElement("strong");
+    name.textContent = pantryState.household.name;
+    line.appendChild(name);
   }
 
-  line.appendChild(document.createTextNode(" · "));
   const manageLink = document.createElement("a");
   manageLink.href = "household.html";
-  manageLink.textContent = "จัดการบ้าน/เชิญสมาชิก";
+  manageLink.textContent = "จัดการบ้าน";
   line.appendChild(manageLink);
 }
 
@@ -115,8 +171,9 @@ async function switchHousehold(households, householdId) {
 
   // ฟอร์มที่เปิดค้างอยู่เป็นของบ้านเดิม — ปิดก่อน กันบันทึกของผิดบ้าน
   closeItemForm();
-  document.getElementById("filter-location").value = "";
-  document.getElementById("filter-type").value = "";
+  setChoice("filter-location", "");
+  setChoice("filter-type", "");
+  pantryState.statusFilter = "";
   pantryState.items = [];
   renderItems();
 
@@ -150,25 +207,22 @@ async function loadItems() {
 // ============ แสดงรายการ ============
 
 function renderItems() {
-  const location = document.getElementById("filter-location").value;
-  const type = document.getElementById("filter-type").value;
+  const location = getChoice("filter-location");
+  const type = getChoice("filter-type");
   const items = pantryState.items.filter(
-    (item) => (!location || item.location === location) && (!type || item.item_type === type)
+    (item) =>
+      (!location || item.location === location) &&
+      (!type || item.item_type === type) &&
+      (!pantryState.statusFilter || getExpiryStatus(item) === pantryState.statusFilter)
   );
 
-  renderBanner();
+  renderSummary();
 
   const container = document.getElementById("pantry-groups");
   container.innerHTML = "";
 
   if (items.length === 0) {
-    const p = document.createElement("p");
-    p.className = "text-muted";
-    p.textContent =
-      pantryState.items.length === 0
-        ? "ยังไม่มีของในบ้าน กด \"+ เพิ่มของ\" เพื่อเริ่มบันทึก"
-        : "ไม่มีของที่ตรงกับตัวกรอง";
-    container.appendChild(p);
+    container.appendChild(createEmptyState());
     return;
   }
 
@@ -178,7 +232,11 @@ function renderItems() {
 
     const section = document.createElement("section");
     const h2 = document.createElement("h2");
-    h2.textContent = `${title} · ${groupItems.length}`;
+    h2.className = "group-title";
+    const dot = document.createElement("span");
+    dot.className = `status-dot status-${status}`;
+    h2.appendChild(dot);
+    h2.appendChild(document.createTextNode(`${title} · ${groupItems.length}`));
     section.appendChild(h2);
 
     const list = document.createElement("div");
@@ -190,79 +248,134 @@ function renderItems() {
   });
 }
 
-// แบนเนอร์ด้านบนนับจากรายการทั้งหมด (ไม่สนตัวกรอง) เพื่อไม่ให้พลาดของที่ใกล้หมด
-function renderBanner() {
-  const expired = pantryState.items.filter((i) => getExpiryStatus(i) === "expired").length;
-  const soon = pantryState.items.filter((i) => getExpiryStatus(i) === "soon").length;
-  const banner = document.getElementById("expiry-banner");
+function createEmptyState() {
+  const empty = document.createElement("div");
+  empty.className = "empty-state";
+  empty.appendChild(icon("package-open", { size: 40 }));
+  const p = document.createElement("p");
+  p.textContent =
+    pantryState.items.length === 0
+      ? "ยังไม่มีของในบ้าน กดปุ่ม \"เพิ่มของ\" มุมขวาล่างเพื่อเริ่มบันทึก"
+      : "ไม่มีของที่ตรงกับตัวกรอง";
+  empty.appendChild(p);
+  return empty;
+}
 
-  const parts = [];
-  if (expired > 0) parts.push(`หมดอายุแล้ว ${expired} รายการ`);
-  if (soon > 0) parts.push(`ใกล้หมดอายุภายใน ${SOON_DAYS} วัน ${soon} รายการ`);
+// แถบสรุปนับจากรายการทั้งหมด (ไม่สนตัวกรอง) เพื่อไม่ให้พลาดของที่ใกล้หมด แตะเพื่อกรองดูเฉพาะกลุ่ม
+function renderSummary() {
+  const counts = { expired: 0, soon: 0 };
+  pantryState.items.forEach((item) => {
+    const status = getExpiryStatus(item);
+    if (status in counts) counts[status]++;
+  });
 
-  banner.textContent = parts.length > 0 ? `⚠️ ${parts.join(" · ")}` : "";
-  banner.style.display = parts.length > 0 ? "block" : "none";
+  const strip = document.getElementById("summary-strip");
+  strip.innerHTML = "";
+  [
+    { filter: "expired", label: "หมดอายุแล้ว", count: counts.expired },
+    { filter: "soon", label: "ใกล้หมด", count: counts.soon },
+    { filter: "", label: "ทั้งหมด", count: pantryState.items.length },
+  ].forEach(({ filter, label, count }) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-pressed", String(pantryState.statusFilter === filter));
+
+    const number = document.createElement("strong");
+    number.textContent = count;
+    if (filter === "expired" && count > 0) number.style.color = "var(--color-danger)";
+    if (filter === "soon" && count > 0) number.style.color = "var(--color-warning)";
+    btn.appendChild(number);
+
+    const caption = document.createElement("span");
+    if (filter) {
+      const dot = document.createElement("span");
+      dot.className = `status-dot status-${filter}`;
+      caption.appendChild(dot);
+    }
+    caption.appendChild(document.createTextNode(label));
+    btn.appendChild(caption);
+
+    btn.addEventListener("click", () => {
+      // แตะซ้ำที่กลุ่มเดิม = เลิกกรอง
+      pantryState.statusFilter = pantryState.statusFilter === filter ? "" : filter;
+      renderItems();
+    });
+    strip.appendChild(btn);
+  });
 }
 
 // ใช้ DOM API แทน innerHTML เพราะชื่อ/หมายเหตุเป็นข้อความที่สมาชิกพิมพ์เอง
 function createItemCard(item, status) {
   const card = document.createElement("article");
-  card.className = `card pantry-item pantry-item-${status}`;
+  card.className = "card pantry-item";
 
   const img = document.createElement("img");
   img.src = item.image_url || PLACEHOLDER_IMAGE;
-  img.alt = item.name;
+  img.alt = "";
+  img.loading = "lazy";
   card.appendChild(img);
 
   const body = document.createElement("div");
   body.className = "pantry-item-body";
 
+  const top = document.createElement("div");
+  top.className = "pantry-item-top";
   const h3 = document.createElement("h3");
   h3.textContent = item.name;
-  body.appendChild(h3);
+  top.appendChild(h3);
+  const pill = document.createElement("span");
+  pill.className = `status-pill status-${status}`;
+  if (status === "expired" || status === "soon") pill.appendChild(icon("clock", { size: 14 }));
+  pill.appendChild(document.createTextNode(shortDaysLeft(item)));
+  top.appendChild(pill);
+  body.appendChild(top);
 
   const meta = document.createElement("p");
   meta.className = "text-muted";
   meta.textContent = [
     LOCATION_LABELS[item.location],
     `${formatQuantity(item.quantity)} ${item.unit}`,
-    pantryState.members[item.added_by] && `เพิ่มโดย ${pantryState.members[item.added_by]}`,
+    item.expiry_date && `${DATE_KIND_LABELS[item.date_kind]} ${formatThaiDate(item.expiry_date)}`,
   ]
     .filter(Boolean)
-    .join(" • ");
+    .join(" · ");
   body.appendChild(meta);
 
-  const expiry = document.createElement("p");
-  expiry.className = "pantry-item-expiry";
-  expiry.textContent = item.expiry_date
-    ? `${DATE_KIND_LABELS[item.date_kind]} ${formatThaiDate(item.expiry_date)} (${describeDaysLeft(item)})`
-    : describeDaysLeft(item);
-  body.appendChild(expiry);
-
-  if (item.note) {
+  const extra = [item.note, pantryState.members[item.added_by] && `เพิ่มโดย ${pantryState.members[item.added_by]}`]
+    .filter(Boolean)
+    .join(" · ");
+  if (extra) {
     const note = document.createElement("p");
     note.className = "text-muted";
-    note.textContent = item.note;
+    note.textContent = extra;
     body.appendChild(note);
   }
 
   const actions = document.createElement("div");
-  actions.className = "hero-actions";
-  actions.appendChild(createActionButton("−1", () => handleUseOne(item)));
-  actions.appendChild(createActionButton("✅ ใช้หมดแล้ว", () => finishItem(item, "used")));
-  actions.appendChild(createActionButton("🗑️ ทิ้ง", () => finishItem(item, "discarded")));
-  actions.appendChild(createActionButton("แก้ไข", () => openItemForm(item)));
-  body.appendChild(actions);
+  actions.className = "item-actions";
+  actions.appendChild(createActionButton("minus", "ใช้ 1", () => handleUseOne(item)));
+  actions.appendChild(createActionButton("check", "ใช้หมด", () => finishItem(item, "used")));
+  actions.appendChild(createActionButton("trash-2", "ทิ้ง", () => finishItem(item, "discarded")));
 
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "icon-btn";
+  editBtn.setAttribute("aria-label", `แก้ไข ${item.name}`);
+  editBtn.appendChild(icon("pencil", { size: 18 }));
+  editBtn.addEventListener("click", () => openItemForm(item));
+  actions.appendChild(editBtn);
+
+  body.appendChild(actions);
   card.appendChild(body);
   return card;
 }
 
-function createActionButton(text, onClick) {
+function createActionButton(iconName, text, onClick) {
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = "btn btn-secondary btn-small";
-  btn.textContent = text;
+  btn.className = "btn btn-secondary";
+  btn.appendChild(icon(iconName, { size: 16 }));
+  btn.appendChild(document.createTextNode(text));
   btn.addEventListener("click", onClick);
   return btn;
 }
@@ -322,17 +435,17 @@ function openItemForm(item) {
 
   document.getElementById("item-form-title").textContent = item ? "แก้ไขของ" : "เพิ่มของ";
   document.getElementById("item-lookup").style.display = item ? "none" : "block";
-  document.getElementById("delete-item-btn").style.display = item ? "inline-block" : "none";
+  document.getElementById("delete-item-btn").style.display = item ? "inline-flex" : "none";
   setLookupStatus("");
   document.getElementById("item-code-input").value = "";
 
   document.getElementById("item-name").value = item?.name || "";
-  document.getElementById("item-type").value = item?.item_type || "food";
-  document.getElementById("item-location").value = item?.location || "pantry";
+  setChoice("item-type", item?.item_type || "food");
+  setChoice("item-location", item?.location || "pantry");
   document.getElementById("item-quantity").value = item ? formatQuantity(item.quantity) : "1";
   document.getElementById("item-unit").value = item?.unit || "ชิ้น";
   document.getElementById("item-expiry").value = item?.expiry_date || "";
-  document.getElementById("item-date-kind").value = item?.date_kind || "exp";
+  setChoice("item-date-kind", item?.date_kind || "exp");
   const noExpiry = Boolean(item) && !item.expiry_date;
   document.getElementById("item-no-expiry").checked = noExpiry;
   document.getElementById("item-expiry").disabled = noExpiry;
@@ -340,9 +453,11 @@ function openItemForm(item) {
   renderItemImagePreview();
   clearExpiryOcrResult(); // อยู่ใน js/pantry-ocr.js
 
+  // ปุ่มลอยซ้อนกับปุ่มบันทึกบนมือถือ — ซ่อนระหว่างกรอกฟอร์ม
+  document.getElementById("add-item-btn").style.display = "none";
   const section = document.getElementById("item-form-section");
   section.style.display = "block";
-  section.scrollIntoView({ behavior: "smooth" });
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function closeItemForm() {
@@ -350,6 +465,9 @@ function closeItemForm() {
   pantryState.editingItem = null;
   document.getElementById("item-form").reset();
   document.getElementById("item-form-section").style.display = "none";
+  if (pantryState.household) {
+    document.getElementById("add-item-btn").style.display = "inline-flex";
+  }
 }
 
 function setLookupStatus(text) {
@@ -379,9 +497,9 @@ async function lookupCode(code) {
   pantryState.lookup.imageUrl =
     product.image_url && product.image_url !== PLACEHOLDER_IMAGE ? product.image_url : null;
   document.getElementById("item-name").value = product.name || "";
-  document.getElementById("item-type").value = guessItemType(product);
+  setChoice("item-type", guessItemType(product));
   renderItemImagePreview();
-  setLookupStatus(`พบ: ${product.name} — ตรวจข้อมูลแล้วใส่วันหมดอายุด้านล่าง`);
+  setLookupStatus(`พบ: ${product.name} — ใส่วันหมดอายุด้านล่างแล้วกดบันทึก`);
 }
 
 function handleItemImageSelected(e) {
@@ -413,11 +531,15 @@ async function handleSaveItem(e) {
     return;
   }
 
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  submitBtn.disabled = true;
+
   let imageUrl = pantryState.lookup.imageUrl;
   if (pantryState.selectedImageFile) {
     try {
       imageUrl = await uploadProductImage(pantryState.selectedImageFile);
     } catch (err) {
+      submitBtn.disabled = false;
       alert(`อัปโหลดรูปไม่สำเร็จ: ${err.message}`);
       return;
     }
@@ -426,12 +548,12 @@ async function handleSaveItem(e) {
   const note = document.getElementById("item-note").value.trim();
   const payload = {
     name: document.getElementById("item-name").value.trim(),
-    item_type: document.getElementById("item-type").value,
-    location: document.getElementById("item-location").value,
+    item_type: getChoice("item-type") || "other",
+    location: getChoice("item-location") || "other",
     quantity: Number(document.getElementById("item-quantity").value),
     unit: document.getElementById("item-unit").value.trim() || "ชิ้น",
     expiry_date: noExpiry ? null : expiryDate,
-    date_kind: document.getElementById("item-date-kind").value,
+    date_kind: getChoice("item-date-kind") || "exp",
     note: note || null,
     image_url: imageUrl,
     barcode: pantryState.lookup.barcode,
@@ -452,6 +574,8 @@ async function handleSaveItem(e) {
       added_by: pantryState.user.id,
     }));
   }
+
+  submitBtn.disabled = false;
 
   if (error) {
     console.error("save item error:", error.message);

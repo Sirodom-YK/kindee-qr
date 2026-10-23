@@ -30,7 +30,9 @@ async function renderNotificationSection(user) {
   section.innerHTML = "";
 
   const h3 = document.createElement("h3");
-  h3.textContent = "🔔 แจ้งเตือนของใกล้หมดอายุ";
+  h3.className = "section-title";
+  h3.appendChild(icon("bell", { size: 20 }));
+  h3.appendChild(document.createTextNode("แจ้งเตือนของใกล้หมดอายุ"));
   section.appendChild(h3);
 
   const supported =
@@ -40,7 +42,7 @@ async function renderNotificationSection(user) {
     section.appendChild(
       createNote(
         isIos() && !isInstalledApp()
-          ? "บน iPhone/iPad ต้องติดตั้งเว็บนี้ก่อน: กดปุ่มแชร์ (⬆️) ใน Safari → \"เพิ่มลงหน้าจอโฮม\" แล้วเปิดจากไอคอนบนหน้าจอโฮม (ต้องเป็น iOS 16.4 ขึ้นไป)"
+          ? "บน iPhone/iPad ต้องติดตั้งเว็บนี้ก่อน: กดปุ่มแชร์ (สี่เหลี่ยมมีลูกศรชี้ขึ้น) ใน Safari → \"เพิ่มลงหน้าจอโฮม\" แล้วเปิดจากไอคอนบนหน้าจอโฮม (ต้องเป็น iOS 16.4 ขึ้นไป)"
           : "เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน หรือเว็บยังไม่ได้เปิดผ่าน HTTPS"
       )
     );
@@ -60,7 +62,7 @@ async function renderNotificationSection(user) {
     permission === "denied"
       ? "คุณบล็อกการแจ้งเตือนของเว็บนี้ไว้ — เปิดได้ในการตั้งค่าเว็บไซต์ของเบราว์เซอร์"
       : subscription
-        ? "✅ เปิดแจ้งเตือนบนเครื่องนี้แล้ว"
+        ? "เปิดแจ้งเตือนบนเครื่องนี้แล้ว"
         : "ยังไม่ได้เปิดแจ้งเตือนบนเครื่องนี้"
   );
   section.appendChild(status);
@@ -154,7 +156,7 @@ async function sendTestPush(btn) {
     alert("ส่งแจ้งเตือนทดสอบไม่สำเร็จ (ได้ deploy expiry-notifier และตั้ง VAPID secrets แล้วหรือยัง?)");
     return;
   }
-  btn.textContent = `ส่งแล้ว ${data.sent} เครื่อง ✓`;
+  btn.textContent = `ส่งแล้ว ${data.sent} เครื่อง`;
 }
 
 // ============ แจ้งล่วงหน้ากี่วัน (ค่าเดียวกันทุกเครื่องของผู้ใช้คนนี้) ============
@@ -212,7 +214,7 @@ async function renderNotifyPrefs(section, user) {
       days_before: selected.length > 0 ? selected : DEFAULT_NOTIFY_DAYS,
       updated_at: new Date().toISOString(),
     });
-    saveBtn.textContent = error ? "บันทึกไม่สำเร็จ" : "บันทึกแล้ว ✓";
+    saveBtn.textContent = error ? "บันทึกไม่สำเร็จ" : "บันทึกแล้ว";
   });
 
   section.appendChild(form);

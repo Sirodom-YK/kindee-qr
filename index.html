@@ -5,46 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KinDee QR — สแกนดูข้อมูลอาหาร ผัก ผลไม้ และขนม</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7fcf77">
+<meta name="theme-color" content="#1d3a6e">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body data-page="home">
   <div id="site-header"></div>
 
   <main class="container">
     <section class="hero">
-      <h1>KinDee QR</h1>
-      <p>ตรวจสอบส่วนประกอบ สารก่อภูมิแพ้ และโภชนาการของอาหาร ขนม ผัก และผลไม้ ด้วยการสแกนบาร์โค้ด/QR Code หรือถ่ายรูป</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="scan.html">สแกน / ถ่ายรูป</a>
-        <a class="btn btn-secondary" href="search.html">ค้นหาสินค้า</a>
-        <a class="btn btn-secondary" href="pantry.html">🏠 ของในบ้าน</a>
-      </div>
+      <h1>กินดี รู้ทันของในบ้าน</h1>
+      <p>สแกนดูส่วนประกอบ สารก่อภูมิแพ้ และโภชนาการ หรือจดวันหมดอายุของใช้ในบ้านร่วมกับคนในบ้าน</p>
     </section>
 
+    <nav class="action-tiles" aria-label="ทางลัด">
+      <a class="tile tile-primary" href="scan.html">
+        <span class="tile-icon"><i data-icon="scan-barcode" data-size="22"></i></span>
+        <strong>สแกนบาร์โค้ด</strong>
+        <span>ดูข้อมูลอาหารและโภชนาการ</span>
+      </a>
+      <a class="tile" href="scan.html#label-upload">
+        <span class="tile-icon"><i data-icon="camera" data-size="22"></i></span>
+        <strong>ถ่ายรูป</strong>
+        <span>ฉลากสินค้า หรือผักผลไม้สด</span>
+      </a>
+      <a class="tile" href="pantry.html">
+        <span class="tile-icon"><i data-icon="package" data-size="22"></i></span>
+        <strong>ของในบ้าน</strong>
+        <span>ติดตามวันหมดอายุ แจ้งเตือนล่วงหน้า</span>
+      </a>
+      <a class="tile" href="search.html">
+        <span class="tile-icon"><i data-icon="search" data-size="22"></i></span>
+        <strong>ค้นหาสินค้า</strong>
+        <span>ด้วยชื่อ แบรนด์ หรือเลขบาร์โค้ด</span>
+      </a>
+    </nav>
+
     <section>
-      <h2>สินค้าตัวอย่าง</h2>
+      <h2>สินค้าในระบบ</h2>
       <div class="product-grid" id="product-grid"></div>
     </section>
 
-    <section class="card">
-      <h2>เกี่ยวกับโปรเจกต์</h2>
-      <p>
-        ข้อมูลผลิตภัณฑ์ที่แสดงบนเว็บไซต์นี้มาจากฐานข้อมูลที่ตรวจสอบได้ เช่น ฐานข้อมูลของระบบเอง
-        ฐานข้อมูลสาธารณะ Open Food Facts (สินค้าที่มีบาร์โค้ด) และ USDA FoodData Central (โภชนาการของผักผลไม้สด)
-        เท่านั้น ระบบ AI ถูกใช้เพื่อ <strong>แปลและอธิบาย</strong> ข้อมูลที่มีอยู่จริง และช่วยระบุชนิดผักผลไม้จากภาพ
-        โดยจะไม่สร้างหรือคาดเดาส่วนประกอบ ค่าโภชนาการ หรือคำเตือนขึ้นมาเอง
-        และจะไม่ยืนยันว่าสินค้าเป็นของแท้หรือปลอดภัยเพียงเพราะสแกนได้
+    <details class="card">
+      <summary>ข้อมูลมาจากไหน</summary>
+      <p class="text-muted">
+        ข้อมูลผลิตภัณฑ์มาจากฐานข้อมูลที่ตรวจสอบได้เท่านั้น ได้แก่ ฐานข้อมูลของระบบเอง
+        Open Food Facts (สินค้าที่มีบาร์โค้ด) และ USDA FoodData Central (โภชนาการของผักผลไม้สด)
+        AI ใช้เพื่อแปลและอธิบายข้อมูลที่มีอยู่จริง และช่วยระบุชนิดผักผลไม้จากภาพ
+        ไม่สร้างหรือคาดเดาส่วนประกอบ ค่าโภชนาการ หรือคำเตือนขึ้นเอง
+        และไม่ยืนยันว่าสินค้าแท้หรือปลอดภัยเพียงเพราะสแกนได้
       </p>
-    </section>
+    </details>
   </main>
 
   <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/icons.js"></script>
   <script src="js/partials.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>

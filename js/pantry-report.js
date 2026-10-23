@@ -18,7 +18,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("report-no-household").style.display = "block";
     return;
   }
-  line.textContent = `🏠 ${household.name}`;
+  line.textContent = "";
+  line.appendChild(icon("house", { size: 16 }));
+  line.appendChild(document.createTextNode(` ${household.name}`));
 
   const monthInput = document.getElementById("report-month");
   monthInput.value = todayIsoDate().slice(0, 7);
@@ -252,7 +254,7 @@ function renderWastedTypes(wastedItems) {
   container.innerHTML = "";
 
   if (wastedItems.length === 0) {
-    container.appendChild(createMuted("เดือนนี้ไม่มีของที่หมดอายุหรือทิ้ง 🎉"));
+    container.appendChild(createMuted("เดือนนี้ไม่มีของที่หมดอายุหรือทิ้ง"));
     return;
   }
 

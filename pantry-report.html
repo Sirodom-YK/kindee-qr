@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>รายงานของในบ้าน — KinDee QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7fcf77">
+<meta name="theme-color" content="#1d3a6e">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body data-page="pantry">
   <div id="site-header"></div>
@@ -23,7 +24,7 @@
     <section id="report-panel" style="display:none;">
       <div class="pantry-toolbar">
         <label>เดือน <input type="month" id="report-month"></label>
-        <a class="btn btn-secondary" href="pantry.html">← กลับไปรายการของ</a>
+        <a class="btn btn-secondary" href="pantry.html"><i data-icon="arrow-left"></i>กลับไปรายการของ</a>
       </div>
 
       <div class="stat-row" id="stat-row"></div>
@@ -61,6 +62,7 @@
   <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/icons.js"></script>
   <script src="js/partials.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>

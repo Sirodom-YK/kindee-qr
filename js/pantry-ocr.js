@@ -78,11 +78,8 @@ function renderOcrCandidates(resultEl, candidates) {
 }
 
 function applyOcrCandidate(candidate) {
-  document.getElementById("item-no-expiry").checked = false;
-  const expiryInput = document.getElementById("item-expiry");
-  expiryInput.disabled = false;
-  expiryInput.value = candidate.iso;
-  document.getElementById("item-date-kind").value = candidate.date_kind;
+  setExpiryDate(candidate.iso); // อยู่ใน js/pantry.js
+  setChoice("item-date-kind", candidate.date_kind);
   setOcrMessage(
     document.getElementById("expiry-ocr-result"),
     `ใส่วันที่ ${formatThaiDate(candidate.iso)} แล้ว — แก้ในช่องด้านล่างได้ถ้าไม่ถูกต้อง`

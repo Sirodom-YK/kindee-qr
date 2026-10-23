@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ค้นหาสินค้า — KinDee QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7fcf77">
+<meta name="theme-color" content="#1d3a6e">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body data-page="search">
   <div id="site-header"></div>
@@ -22,8 +23,8 @@
 
     <section class="card">
       <form id="search-form">
-        <input type="text" id="search-input" placeholder="เช่น มันฝรั่งทอด, Nutella หรือ 8850123456781">
-        <button type="submit" class="btn btn-primary">ค้นหา</button>
+        <input type="search" id="search-input" placeholder="ชื่อ แบรนด์ หรือเลขบาร์โค้ด" aria-label="คำค้นหา" enterkeyhint="search">
+        <button type="submit" class="btn btn-primary" aria-label="ค้นหา"><i data-icon="search"></i></button>
       </form>
     </section>
 
@@ -33,6 +34,7 @@
   <div id="site-footer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/icons.js"></script>
   <script src="js/partials.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>

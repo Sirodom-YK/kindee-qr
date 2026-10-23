@@ -5,46 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>สแกน — KinDee QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7fcf77">
+<meta name="theme-color" content="#1d3a6e">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body data-page="scan">
   <div id="site-header"></div>
 
   <main class="container">
     <section class="hero">
-      <h1>สแกนบาร์โค้ด / QR Code</h1>
-      <p>เปิดกล้องแล้วเล็งไปที่บาร์โค้ดหรือ QR Code บนสินค้าอาหาร ขนม หรือเครื่องดื่ม เบราวเซอร์จะขออนุญาตใช้กล้องก่อนเริ่มสแกน</p>
+      <h1>สแกน</h1>
+      <p>เล็งกล้องไปที่บาร์โค้ดหรือ QR Code บนสินค้า</p>
     </section>
 
     <section>
       <div id="qr-reader"></div>
     </section>
 
+    <!-- ผลการสแกนอยู่ใต้กล้องทันที มองเห็นได้โดยไม่ต้องเลื่อน -->
+    <section id="scan-result" class="card" style="display:none;"></section>
+
     <section class="card">
-      <h2>หรือพิมพ์เลขบาร์โค้ด</h2>
-      <p class="text-muted">ใช้เมื่อกล้องอ่านไม่ได้ — พิมพ์ตัวเลขใต้บาร์โค้ด (8-14 หลัก) หรือรหัส QR ของสินค้า</p>
+      <h2 class="section-title"><i data-icon="keyboard"></i>พิมพ์เลขบาร์โค้ด</h2>
+      <p class="text-muted">ใช้เมื่อกล้องอ่านไม่ได้ — ตัวเลขใต้บาร์โค้ด หรือรหัส QR ของสินค้า</p>
       <form id="manual-code-form">
-        <input type="text" id="manual-code-input" inputmode="numeric" autocomplete="off" placeholder="เช่น 8850123456781">
-        <button type="submit" class="btn btn-primary">ค้นหา</button>
+        <input type="text" id="manual-code-input" inputmode="numeric" autocomplete="off" placeholder="เช่น 8850123456781" aria-label="เลขบาร์โค้ด">
+        <button type="submit" class="btn btn-primary" aria-label="ค้นหา"><i data-icon="search"></i></button>
       </form>
     </section>
 
-    <section id="scan-result" class="card" style="display:none;"></section>
-
     <section id="label-upload" class="card">
-      <h2>หรือถ่ายรูปแทน</h2>
+      <h2 class="section-title"><i data-icon="camera"></i>ถ่ายรูปแทน</h2>
       <p class="text-muted">
-        <strong>สินค้ามีฉลาก:</strong> AI จะอ่านเฉพาะตัวอักษรที่เห็นจริงบนฉลาก (ชื่อสินค้า แบรนด์ บาร์โค้ด) แล้วค้นหาต่อ
-        <br>
-        <strong>ผัก/ผลไม้สด:</strong> AI จะคาดว่าเป็นชนิดใดจากภาพ ให้คุณยืนยันก่อน แล้วจึงแสดงข้อมูลโภชนาการจาก USDA
+        ฉลากสินค้า: AI อ่านชื่อ แบรนด์ บาร์โค้ด แล้วค้นหาต่อ ·
+        ผักผลไม้สด: AI คาดชนิดให้คุณยืนยัน แล้วแสดงโภชนาการ
       </p>
       <div class="hero-actions">
-        <label class="btn btn-secondary" for="label-photo-camera">📷 ถ่ายรูป</label>
-        <label class="btn btn-secondary" for="label-photo-file">🖼️ เลือกจากเครื่อง</label>
+        <label class="btn btn-primary" for="label-photo-camera"><i data-icon="camera"></i>ถ่ายรูป</label>
+        <label class="btn btn-secondary" for="label-photo-file"><i data-icon="image"></i>เลือกจากเครื่อง</label>
       </div>
       <!-- แยก 2 ช่อง: capture บังคับเปิดกล้องบนมือถือ ส่วนช่องที่ไม่มี capture เลือกจากคลังรูป/ไฟล์ได้ -->
       <input type="file" id="label-photo-camera" accept="image/*" capture="environment" style="display:none;">
@@ -56,6 +57,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/partials.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>

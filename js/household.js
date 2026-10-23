@@ -88,7 +88,10 @@ async function selectHousehold(householdId) {
   saveCurrentHouseholdId(householdId);
 
   document.getElementById("household-switch").value = householdId;
-  document.getElementById("household-name").textContent = `🏠 ${currentHousehold.name}`;
+  const nameEl = document.getElementById("household-name");
+  nameEl.textContent = "";
+  nameEl.appendChild(icon("house", { size: 22 }));
+  nameEl.appendChild(document.createTextNode(currentHousehold.name));
   document.getElementById("invite-result").style.display = "none";
   await loadMembers();
 }
@@ -200,7 +203,10 @@ async function handleCopyInvite() {
   const input = document.getElementById("invite-link");
   try {
     await navigator.clipboard.writeText(input.value);
-    document.getElementById("copy-invite-btn").textContent = "คัดลอกแล้ว ✓";
+    const copyBtn = document.getElementById("copy-invite-btn");
+    copyBtn.textContent = "";
+    copyBtn.appendChild(icon("check", { size: 18 }));
+    copyBtn.appendChild(document.createTextNode("คัดลอกแล้ว"));
   } catch {
     // clipboard API ใช้ไม่ได้ (เช่น ไม่ใช่ HTTPS) — เลือกข้อความให้ผู้ใช้กดคัดลอกเอง
     input.select();
