@@ -31,6 +31,17 @@ async function readExpiryDate(base64Data, mimeType) {
   return await callGeminiImageAction("read_expiry_date", base64Data, mimeType);
 }
 
+// ระบบของในบ้าน: ถ่ายรูปสินค้า 1 รูป → { product_name, brand, size, item_type, barcode, dates: [...] }
+// ใช้ได้กับของทุกประเภท (อาหาร ยา เครื่องสำอาง ของใช้) — dates แปลงด้วย interpretExpiryCandidates()
+async function readPantryItem(base64Data, mimeType) {
+  return await callGeminiImageAction("read_pantry_item", base64Data, mimeType);
+}
+
+// ค้นบาร์โค้ดในฐานข้อมูลสินค้าสากล UPCitemdb (ผ่าน edge function) — คืน result = null ถ้าไม่พบ
+async function lookupUpcItemDb(barcode) {
+  return await callGeminiAction("upc_lookup", barcode);
+}
+
 async function callGeminiImageAction(action, base64Data, mimeType) {
   const { data, error } = await supabaseClient.functions.invoke("gemini-proxy", {
     body: { action, image: { data: base64Data, mimeType } },

@@ -4,6 +4,69 @@
 
 document.getElementById("expiry-photo-camera").addEventListener("change", handleExpiryPhoto);
 document.getElementById("expiry-photo-file").addEventListener("change", handleExpiryPhoto);
+document.getElementById("item-photo-camera").addEventListener("change", handleItemPhoto);
+
+// ถ่ายรูปสินค้า 1 รูป → AI อ่านชื่อ แบรนด์ ประเภท (และวันที่ถ้าเห็น) แล้วกรอกฟอร์มให้
+// ชื่อ/ประเภทกรอกลงช่องให้เลย (ผู้ใช้เห็นและแก้ได้ก่อนกดบันทึก) ส่วนวันที่ยังต้องกด "ใช้วันนี้" เอง
+// เพราะฉลากมีหลายวันที่และปีตีความผิดได้ (เหตุผลเดียวกับ handleExpiryPhoto)
+async function handleItemPhoto(e) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+
+  setLookupStatus("กำลังอ่านข้อมูลจากรูป..."); // อยู่ใน js/pantry.js
+  // ใช้รูปนี้เป็นรูปของรายการด้วย ถ้ายังไม่มีรูปจากฐานข้อมูล
+  if (!pantryState.lookup.imageUrl && !pantryState.selectedImageFile) {
+    pantryState.selectedImageFile = file;
+    renderItemImagePreview();
+  }
+
+  try {
+    const { base64, mimeType } = await resizeImageToBase64(file, 1600, 0.85);
+    const response = await readPantryItem(base64, mimeType);
+    if (!response.ok) {
+      setLookupStatus(`อ่านรูปไม่สำเร็จ: ${response.error} — พิมพ์ชื่อเองด้านล่างได้เลย`);
+      return;
+    }
+
+    const r = response.result || {};
+    const filled = [];
+
+    const name = [r.brand && !(r.product_name || "").includes(r.brand) ? r.brand : null, r.product_name, r.size]
+      .filter(Boolean)
+      .join(" ")
+      .slice(0, 200);
+    if (r.product_name) {
+      document.getElementById("item-name").value = name;
+      filled.push("ชื่อ");
+    }
+    if (r.item_type) {
+      setChoice("item-type", r.item_type);
+      filled.push("ประเภท");
+    }
+    if (r.barcode && !pantryState.lookup.barcode) {
+      pantryState.lookup.barcode = r.barcode; // จำไว้ ครั้งหน้าสแกนบาร์โค้ดนี้จะเจอชื่อทันที
+    }
+
+    const candidates = interpretExpiryCandidates(r.dates);
+    if (candidates.length > 0) {
+      const resultEl = document.getElementById("expiry-ocr-result");
+      resultEl.style.display = "block";
+      renderOcrCandidates(resultEl, candidates);
+      filled.push("วันที่ (กดเลือกด้านล่าง)");
+    }
+
+    setLookupStatus(
+      filled.length
+        ? `AI กรอกให้แล้ว: ${filled.join(", ")} — ตรวจให้ตรงกับฉลากก่อนกดบันทึก`
+        : "อ่านชื่อจากรูปไม่ได้ ลองถ่ายด้านหน้าให้เห็นชื่อชัด ๆ หรือพิมพ์เองด้านล่าง"
+    );
+    if (!r.product_name) document.getElementById("item-name").focus();
+  } catch (err) {
+    console.error("handleItemPhoto error:", err);
+    setLookupStatus("เกิดข้อผิดพลาดในการอ่านรูป — พิมพ์ชื่อเองด้านล่างได้เลย");
+  }
+}
 
 async function handleExpiryPhoto(e) {
   const file = e.target.files[0];

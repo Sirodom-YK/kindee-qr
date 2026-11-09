@@ -16,9 +16,20 @@
 // เบราวเซอร์จึงเรียกตรงไม่ได้ ต้องผ่านตัวกลางนี้ (ส่วน API ค้นด้วยบาร์โค้ดเปิด CORS อยู่แล้ว เรียกตรงจากเว็บได้)
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// เปลี่ยนชื่อโมเดลได้ตามรุ่นที่คุณใช้งานได้จริงใน Google AI Studio
-const GEMINI_MODEL = "gemini-3.8-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// ลองโมเดลตามลำดับ ถ้าตัวแรกโควตาเต็ม (429) หรือเซิร์ฟเวอร์ไม่ว่าง (500/503) จะลองตัวถัดไปอัตโนมัติ
+// ทำให้การอ่านภาพไม่ล้มเพราะโควตาฟรีของโมเดลเดียวหมด — เปลี่ยนรายการได้โดยไม่ต้องแก้โค้ด:
+//   supabase secrets set GEMINI_MODELS=gemini-3.8-flash,gemini-flash-latest,gemini-flash-lite-latest
+const GEMINI_MODELS = (Deno.env.get("GEMINI_MODELS") ||
+  "gemini-3.8-flash,gemini-flash-latest,gemini-flash-lite-latest")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_RETRY_STATUSES = [429, 500, 502, 503, 504];
+
+// UPCitemdb (ฟรี 100 ครั้ง/วัน ไม่ต้องใช้คีย์) — ฐานข้อมูลบาร์โค้ดสินค้าทั่วไปทั่วโลก ใช้เป็นแหล่งสุดท้าย
+// ไม่เปิด CORS ให้เว็บอื่น จึงต้องเรียกผ่านตัวกลางนี้
+const UPCITEMDB_URL = "https://api.upcitemdb.com/prod/trial/lookup";
 
 // ถ้ายังไม่ได้ตั้ง USDA_API_KEY จะใช้ DEMO_KEY ซึ่งจำกัดแค่ 30 ครั้ง/ชั่วโมง พอสำหรับทดลองเท่านั้น
 const USDA_API_KEY = Deno.env.get("USDA_API_KEY") || "DEMO_KEY";
@@ -76,6 +87,22 @@ const EXPIRY_IMAGE_PROMPT =
   `ถ้าเดือนเป็นตัวอักษร (เช่น JUN, มิ.ย.) ให้แปลงเป็นตัวเลขเดือน ถ้าอ่านตัวเลขใดไม่ชัดให้ใส่ null ห้ามเดา ` +
   `ถ้าไม่พบวันที่เลยให้ตอบ {"dates": []}`;
 
+// ระบบของในบ้าน: ถ่ายรูปสินค้า 1 รูป → อ่านทั้งชื่อ ประเภท และวันที่ (ถ้าเห็นในภาพ) เพื่อกรอกฟอร์มให้
+// ใช้กับของทุกประเภท (อาหาร ยา เครื่องสำอาง ของใช้) ไม่ใช่แค่อาหาร
+const PANTRY_ITEM_PROMPT =
+  `ภาพนี้คือสินค้าที่ผู้ใช้จะบันทึกเข้ารายการของในบ้าน อาจเป็นอาหาร เครื่องดื่ม ยา อาหารเสริม เครื่องสำอาง ของใช้ส่วนตัว หรือของใช้ในบ้าน ` +
+  `อ่านข้อความจากฉลากแล้วตอบกลับเป็น JSON รูปแบบนี้เท่านั้น:\n` +
+  `{"product_name": "ชื่อสินค้าสั้น ๆ ที่คนทั่วไปเรียก ภาษาตามฉลาก (ถ้ามีทั้งไทยและอังกฤษให้ใช้ไทย) เช่น \\"นมจืด UHT\\" \\"ยาสีฟันสูตรเกลือ\\" หรือ null", ` +
+  `"brand": "แบรนด์ที่อ่านได้ หรือ null", ` +
+  `"size": "ขนาด/ปริมาณที่พิมพ์บนฉลาก เช่น 200 มล., 150 g หรือ null", ` +
+  `"item_type": "food" (อาหาร/เครื่องดื่ม) หรือ "medicine" (ยา/อาหารเสริม/วิตามิน) หรือ "cosmetic" (เครื่องสำอาง/ของใช้ส่วนตัว เช่น สบู่ แชมพู ยาสีฟัน) ` +
+  `หรือ "household" (ของใช้ในบ้าน เช่น น้ำยาล้างจาน ผงซักฟอก) หรือ "other", ` +
+  `"barcode": "เลขบาร์โค้ดที่อ่านได้ชัดเจน (ตัวเลขเท่านั้น) หรือ null", ` +
+  `"dates": [วันที่ที่พิมพ์บนฉลากในรูปแบบเดียวกับนี้ {"kind": "exp"|"bbe"|"mfg"|"unknown", "raw_text": "ข้อความตามที่เห็น", "day": ตัวเลขหรือ null, "month": 1-12 หรือ null, "year": ตัวเลขปีตามที่พิมพ์จริง ห้ามแปลง พ.ศ./ค.ศ.}] ` +
+  `หรือ [] ถ้าไม่เห็นวันที่}\n` +
+  `ห้ามเดาหรือแต่งข้อความที่อ่านจากภาพไม่ได้ชัดเจน ให้ใส่ null สำหรับฟิลด์ที่ไม่แน่ใจ ` +
+  `item_type ให้ตัดสินจากชนิดของสินค้าที่เห็น ห้ามประเมินว่าสินค้าปลอดภัยหรือเป็นของแท้`;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -90,12 +117,33 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-async function callGemini(parts: Record<string, unknown>[]) {
-  return await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts }] }),
+// jsonMode = true สำหรับงานอ่านภาพ: บังคับให้ตอบเป็น JSON และ temperature 0 (อ่านตามที่เห็น ไม่สร้างสรรค์)
+// ลดโอกาสที่คำตอบแปลงเป็น JSON ไม่ได้ และทำให้ผลอ่านภาพเดิมได้ค่าเดิมทุกครั้ง
+async function callGemini(parts: Record<string, unknown>[], jsonMode = false) {
+  const body = JSON.stringify({
+    contents: [{ parts }],
+    ...(jsonMode
+      ? { generationConfig: { temperature: 0, responseMimeType: "application/json" } }
+      : {}),
   });
+
+  let lastResponse: Response | null = null;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const res = await fetch(`${GEMINI_BASE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      // 404 = ชื่อโมเดลนี้ใช้ไม่ได้แล้ว ก็ลองตัวถัดไปเช่นกัน
+      if (res.ok || ![...GEMINI_RETRY_STATUSES, 404].includes(res.status)) return res;
+      console.warn(`Gemini model ${model} failed with ${res.status}, trying next model`);
+      lastResponse = res;
+    } catch (e) {
+      console.warn(`Gemini model ${model} network error, trying next model:`, e);
+    }
+  }
+  return lastResponse ?? new Response("all Gemini models failed", { status: 503 });
 }
 
 function stringOrNull(value: unknown) {
@@ -146,15 +194,19 @@ async function handleImageAction(
   }
 
   try {
-    const geminiRes = await callGemini([
-      { text: prompt },
-      { inlineData: { mimeType: image.mimeType, data: image.data } },
-    ]);
+    const geminiRes = await callGemini(
+      [{ text: prompt }, { inlineData: { mimeType: image.mimeType, data: image.data } }],
+      true
+    );
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       console.error(`Gemini API error (${action}):`, errText);
-      return jsonResponse({ error: "เรียก Gemini API ไม่สำเร็จ" }, 502);
+      const busy = geminiRes.status === 429 || geminiRes.status === 503;
+      return jsonResponse(
+        { error: busy ? "AI ถูกใช้งานเต็มโควตาชั่วคราว ลองใหม่ในอีกสักครู่ หรือกรอกเองได้เลย" : "เรียก Gemini API ไม่สำเร็จ" },
+        502
+      );
     }
 
     const geminiJson = await geminiRes.json();
@@ -177,24 +229,79 @@ function intOrNull(value: unknown, min: number, max: number) {
   return typeof n === "number" && Number.isInteger(n) && n >= min && n <= max ? n : null;
 }
 
-function parseExpiryJson(text: string) {
+function parseJsonObject(text: string): Record<string, unknown> {
   const cleaned = text.replace(/```json|```/g, "").trim();
-  let obj: { dates?: unknown } = {};
   try {
-    obj = JSON.parse(cleaned);
+    const obj = JSON.parse(cleaned);
+    return obj && typeof obj === "object" ? obj : {};
   } catch {
-    // แปลงไม่ได้ → ไม่มีวันที่ ฝั่งเว็บจะให้ผู้ใช้กรอกเอง
+    return {}; // แปลงไม่ได้ → ทุกฟิลด์ว่าง ฝั่งเว็บจะให้ผู้ใช้กรอกเอง
   }
-  const dates = Array.isArray(obj.dates) ? obj.dates.slice(0, 5) : [];
+}
+
+function sanitizeDates(value: unknown) {
+  const dates = Array.isArray(value) ? value.slice(0, 5) : [];
+  return dates.map((d: Record<string, unknown>) => ({
+    kind: ["exp", "bbe", "mfg"].includes(d?.kind as string) ? d.kind : "unknown",
+    raw_text: (stringOrNull(d?.raw_text) || "").slice(0, 60),
+    day: intOrNull(d?.day, 1, 31),
+    month: intOrNull(d?.month, 1, 12),
+    year: intOrNull(d?.year, 0, 2700),
+  }));
+}
+
+function parseExpiryJson(text: string) {
+  return { dates: sanitizeDates(parseJsonObject(text).dates) };
+}
+
+const PANTRY_ITEM_TYPES = ["food", "medicine", "cosmetic", "household", "other"];
+
+function parsePantryItemJson(text: string) {
+  const obj = parseJsonObject(text);
+  const barcode = stringOrNull(obj.barcode);
   return {
-    dates: dates.map((d: Record<string, unknown>) => ({
-      kind: ["exp", "bbe", "mfg"].includes(d?.kind as string) ? d.kind : "unknown",
-      raw_text: (stringOrNull(d?.raw_text) || "").slice(0, 60),
-      day: intOrNull(d?.day, 1, 31),
-      month: intOrNull(d?.month, 1, 12),
-      year: intOrNull(d?.year, 0, 2700),
-    })),
+    product_name: stringOrNull(obj.product_name)?.slice(0, 200) ?? null,
+    brand: stringOrNull(obj.brand)?.slice(0, 100) ?? null,
+    size: stringOrNull(obj.size)?.slice(0, 40) ?? null,
+    item_type: PANTRY_ITEM_TYPES.includes(obj.item_type as string) ? obj.item_type : null,
+    barcode: barcode && /^\d{8,14}$/.test(barcode) ? barcode : null,
+    dates: sanitizeDates(obj.dates),
   };
+}
+
+// UPCitemdb → { name, brand, image_url, category } หรือ null ถ้าไม่พบ
+async function handleUpcLookup(code?: string) {
+  if (typeof code !== "string" || !/^\d{8,14}$/.test(code.trim())) {
+    return jsonResponse({ error: "เลขบาร์โค้ดไม่ถูกต้อง" }, 400);
+  }
+
+  try {
+    const res = await fetch(`${UPCITEMDB_URL}?upc=${encodeURIComponent(code.trim())}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (res.status === 429) {
+      return jsonResponse({ result: null, note: "ใช้ฐานข้อมูลบาร์โค้ดสากลครบโควตาวันนี้แล้ว" });
+    }
+    if (!res.ok) {
+      console.error("UPCitemdb error:", res.status, await res.text());
+      return jsonResponse({ result: null });
+    }
+
+    const item = (await res.json())?.items?.[0];
+    if (!item?.title) return jsonResponse({ result: null });
+
+    return jsonResponse({
+      result: {
+        name: String(item.title).slice(0, 200),
+        brand: stringOrNull(item.brand),
+        image_url: Array.isArray(item.images) ? item.images.find((u: unknown) => typeof u === "string" && u.startsWith("https://")) ?? null : null,
+        category: stringOrNull(item.category),
+      },
+    });
+  } catch (e) {
+    console.error("gemini-proxy upc_lookup error:", e);
+    return jsonResponse({ result: null });
+  }
 }
 
 // nutrientId ของ USDA FoodData Central → ฟิลด์ nutrition ของระบบเรา (ต่อ 100 กรัม)
@@ -381,6 +488,10 @@ Deno.serve(async (req: Request) => {
     return await handleOffSearch(text);
   }
 
+  if (action === "upc_lookup") {
+    return await handleUpcLookup(text);
+  }
+
   if (!GEMINI_API_KEY) {
     return jsonResponse(
       { error: "GEMINI_API_KEY ยังไม่ถูกตั้งค่าในฝั่งเซิร์ฟเวอร์" },
@@ -394,6 +505,10 @@ Deno.serve(async (req: Request) => {
 
   if (action === "read_expiry_date") {
     return await handleImageAction(action, image, EXPIRY_IMAGE_PROMPT, parseExpiryJson);
+  }
+
+  if (action === "read_pantry_item") {
+    return await handleImageAction(action, image, PANTRY_ITEM_PROMPT, parsePantryItemJson);
   }
 
   return await handleTextAction(action, text);

@@ -476,19 +476,37 @@ function setLookupStatus(text) {
   el.style.display = text ? "block" : "none";
 }
 
-// สแกน/พิมพ์บาร์โค้ด → หาในระบบเราก่อน แล้ว Open Food Facts → เติมชื่อ รูป ประเภท
-// ของที่ไม่ใช่อาหาร (ยา เครื่องสำอาง ของใช้) ส่วนใหญ่จะไม่พบ ให้กรอกชื่อเอง แต่ยังจำบาร์โค้ดไว้
+// สแกน/พิมพ์บาร์โค้ด → ค้นตามลำดับ แล้วเติมชื่อ รูป ประเภท (ที่เก็บ/หน่วย ถ้าเคยบันทึกในบ้านนี้)
+//   1) ของที่บ้านนี้เคยบันทึกด้วยบาร์โค้ดเดียวกัน — แม่นที่สุด และทำงานได้แม้สินค้าไม่มีในฐานข้อมูลใดเลย
+//   2) ตาราง products ของระบบเรา
+//   3) เครือ Open Food Facts ทุกประเภท (อาหาร / เครื่องสำอาง / ของใช้ / อาหารสัตว์)
+//   4) UPCitemdb ฐานข้อมูลบาร์โค้ดสากล (ฟรี 100 ครั้ง/วัน)
+// ไม่พบเลย → ให้ถ่ายรูปสินค้าให้ AI อ่านชื่อ หรือพิมพ์เอง (บาร์โค้ดถูกจำไว้ ครั้งหน้าจะเจอจากข้อ 1)
 async function lookupCode(code) {
   setLookupStatus(`กำลังค้นหา ${code}...`);
   pantryState.lookup.barcode = code;
 
-  let product = await findProductByScannedValue(code);
-  if (!product && isLikelyBarcode(code)) {
-    product = await getProductFromOpenFoodFacts(code);
+  const steps = [
+    () => findHouseholdItemByBarcode(code),
+    () => findProductByScannedValue(code),
+    () => (isLikelyBarcode(code) ? getProductFromOpenFoodFacts(code, { anyType: true }) : null),
+    () => (isLikelyBarcode(code) ? findProductInUpcItemDb(code) : null),
+  ];
+
+  let product = null;
+  for (const step of steps) {
+    try {
+      product = await step();
+    } catch (err) {
+      console.error("lookupCode step error:", err);
+    }
+    if (product?.name) break;
   }
 
-  if (!product) {
-    setLookupStatus(`ไม่พบข้อมูลของบาร์โค้ด ${code} — กรอกชื่อเองด้านล่างได้เลย`);
+  if (!product?.name) {
+    setLookupStatus(
+      `ไม่พบข้อมูลของบาร์โค้ด ${code} — กด "ถ่ายรูปสินค้า" ให้ AI อ่านชื่อ หรือพิมพ์ชื่อเองด้านล่าง`
+    );
     document.getElementById("item-name").focus();
     return;
   }
@@ -496,10 +514,35 @@ async function lookupCode(code) {
   pantryState.lookup.productId = product.id || null;
   pantryState.lookup.imageUrl =
     product.image_url && product.image_url !== PLACEHOLDER_IMAGE ? product.image_url : null;
-  document.getElementById("item-name").value = product.name || "";
+  document.getElementById("item-name").value = product.name;
   setChoice("item-type", guessItemType(product));
+  if (product.location) setChoice("item-location", product.location);
+  if (product.unit) document.getElementById("item-unit").value = product.unit;
   renderItemImagePreview();
-  setLookupStatus(`พบ: ${product.name} — ใส่วันหมดอายุด้านล่างแล้วกดบันทึก`);
+  setLookupStatus(`พบ: ${product.name} (${product.sourceLabel || "ฐานข้อมูลสินค้า"}) — ตรวจชื่อ ใส่วันหมดอายุ แล้วกดบันทึก`);
+}
+
+// ของที่บ้านนี้เคยบันทึกด้วยบาร์โค้ดเดียวกัน (รวมของที่ใช้หมด/ทิ้งไปแล้ว) — ใช้ชื่อที่คนในบ้านตั้งเอง
+async function findHouseholdItemByBarcode(code) {
+  if (!pantryState.household) return null;
+  const { data, error } = await supabaseClient
+    .from("pantry_items")
+    .select("name, item_type, location, unit, image_url, product_id")
+    .eq("household_id", pantryState.household.id)
+    .eq("barcode", code)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error || !data?.length) return null;
+  const item = data[0];
+  return { ...item, id: item.product_id, sourceLabel: "เคยบันทึกในบ้านนี้" };
+}
+
+async function findProductInUpcItemDb(code) {
+  const response = await lookupUpcItemDb(code); // อยู่ใน js/gemini.js
+  if (!response.ok || !response.result) return null;
+  const { name, brand, image_url } = response.result;
+  const fullName = brand && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name;
+  return { name: fullName, image_url, sourceLabel: "UPCitemdb" };
 }
 
 function handleItemImageSelected(e) {

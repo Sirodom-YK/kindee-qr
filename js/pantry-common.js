@@ -199,6 +199,15 @@ function formatThaiDate(isoDate) {
 // เดาประเภทของจากหมวดสินค้าในระบบ/Open Food Facts ตอนสแกนเพิ่มของ
 function guessItemType(product) {
   if (!product) return "other";
+  // ประเภทที่ระบุมาตรง ๆ (ประวัติในบ้าน / AI อ่านจากรูป / ฐานข้อมูลในเครือ Open Food Facts)
+  if (product.item_type && ITEM_TYPE_LABELS[product.item_type]) return product.item_type;
+  if (
+    product.off_product_type &&
+    typeof OFF_PRODUCT_TYPE_TO_ITEM_TYPE !== "undefined" && // อยู่ใน js/openfoodfacts.js
+    OFF_PRODUCT_TYPE_TO_ITEM_TYPE[product.off_product_type]
+  ) {
+    return OFF_PRODUCT_TYPE_TO_ITEM_TYPE[product.off_product_type];
+  }
   if (["packaged", "snack", "beverage", "vegetable", "fruit"].includes(product.category)) {
     return "food";
   }

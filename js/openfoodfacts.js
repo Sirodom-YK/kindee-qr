@@ -5,22 +5,46 @@
 
 const OPEN_FOOD_FACTS_BASE_URL = "https://world.openfoodfacts.org";
 
-async function getProductFromOpenFoodFacts(barcode) {
+// anyType = true → ค้นทุกฐานข้อมูลในเครือ Open Food Facts ในครั้งเดียว (product_type=all)
+// อาหาร (Open Food Facts), เครื่องสำอาง/ของใช้ส่วนตัว (Open Beauty Facts),
+// ของใช้ทั่วไป (Open Products Facts), อาหารสัตว์ (Open Pet Food Facts) — เซิร์ฟเวอร์จะ redirect
+// ไปฐานข้อมูลที่ถูกต้องให้เอง ใช้ในระบบของในบ้าน ส่วนหน้าสแกน/รายละเอียดใช้เฉพาะอาหาร
+async function getProductFromOpenFoodFacts(barcode, { anyType = false } = {}) {
   try {
+    const query = anyType ? "?product_type=all" : "";
     const res = await fetch(
-      `${OPEN_FOOD_FACTS_BASE_URL}/api/v2/product/${encodeURIComponent(barcode)}.json`
+      `${OPEN_FOOD_FACTS_BASE_URL}/api/v2/product/${encodeURIComponent(barcode)}.json${query}`
     );
     if (!res.ok) return null;
 
     const json = await res.json();
     if (json.status !== 1 || !json.product) return null;
 
-    return mapOpenFoodFactsProduct(json.product, barcode);
+    const product = mapOpenFoodFactsProduct(json.product, barcode);
+    // หลัง redirect ลิงก์แหล่งที่มาต้องชี้ไปเว็บของฐานข้อมูลที่พบจริง
+    product.source_url = `${new URL(res.url).origin}/product/${barcode}`;
+    product.sourceLabel = OFF_SOURCE_LABELS[product.off_product_type] || "Open Food Facts";
+    return product;
   } catch (e) {
     console.error("getProductFromOpenFoodFacts error:", e.message);
     return null;
   }
 }
+
+// product_type ของเครือ Open Food Facts → ประเภทของในบ้าน (ITEM_TYPE_LABELS ใน js/pantry-common.js)
+const OFF_PRODUCT_TYPE_TO_ITEM_TYPE = {
+  food: "food",
+  beauty: "cosmetic",
+  product: "household",
+  petfood: "other",
+};
+
+const OFF_SOURCE_LABELS = {
+  food: "Open Food Facts",
+  beauty: "Open Beauty Facts",
+  product: "Open Products Facts",
+  petfood: "Open Pet Food Facts",
+};
 
 // ค้นหาด้วยชื่อสินค้า — บริการค้นหาของ Open Food Facts ไม่เปิด CORS ให้เว็บอื่น จึงต้องเรียกผ่าน
 // edge function (action "off_search" ใน js/gemini.js) ผลลัพธ์มีแค่ข้อมูลสำหรับการ์ด
@@ -38,6 +62,8 @@ function mapOpenFoodFactsProduct(p, barcode) {
   return {
     source: "openfoodfacts",
     id: null,
+    // มีเฉพาะผลจาก API บาร์โค้ด (food / beauty / product / petfood)
+    off_product_type: p.product_type || null,
     name: p.product_name_th || p.product_name || null,
     // API บาร์โค้ดส่ง brands เป็นข้อความ แต่ API ค้นหาส่งเป็น array
     brand: (Array.isArray(p.brands) ? p.brands.join(", ") : p.brands) || null,
