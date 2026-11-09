@@ -65,11 +65,14 @@ function mapOpenFoodFactsProduct(p, barcode) {
     // มีเฉพาะผลจาก API บาร์โค้ด (food / beauty / product / petfood)
     off_product_type: p.product_type || null,
     name: p.product_name_th || p.product_name || null,
+    // ชื่ออังกฤษ/ขนาด ใช้จัดอันดับผลค้นหาจากรูปฉลาก (js/label-match.js)
+    name_en: p.product_name_en || null,
+    quantity: p.quantity || null,
     // API บาร์โค้ดส่ง brands เป็นข้อความ แต่ API ค้นหาส่งเป็น array
     brand: (Array.isArray(p.brands) ? p.brands.join(", ") : p.brands) || null,
     barcode: barcode,
     qr_code_value: null,
-    image_url: p.image_front_url || p.image_url || null,
+    image_url: p.image_front_url || p.image_front_small_url || p.image_url || null,
     product_type: (Array.isArray(p.categories) ? p.categories.join(", ") : p.categories) || null,
     category: "packaged",
     ingredients: p.ingredients_text_th || p.ingredients_text || null,

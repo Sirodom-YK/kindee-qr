@@ -475,6 +475,13 @@ details summary {
   font-weight: 500;
 }
 
+/* ผลค้นหาจากรูปฉลากที่ชื่อ/แบรนด์/ขนาดใกล้เคียงมาก (js/label-match.js) — ใช้คู่ไอคอนข้อความ ไม่ใช้สีอย่างเดียว */
+.badge.match-badge {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  font-weight: 600;
+}
+
 .badge.nutriscore {
   color: #ffffff;
   font-weight: 700;

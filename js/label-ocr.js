@@ -54,13 +54,10 @@ async function handleExtractedLabelData(extracted, resultEl) {
     }
   }
 
-  // 2. ค้นหาด้วยชื่อ/แบรนด์ที่อ่านได้ — อาจพบได้หลายรายการ ต้องให้ผู้ใช้เลือกเอง
-  // ไม่ใช่การจับคู่และยืนยันให้อัตโนมัติ เพราะเป็นแค่ข้อความที่อ่านได้ ไม่ใช่การยืนยันตัวสินค้า
-  const searchTerm = productName || brand;
-  let matches = searchTerm ? await searchProductsByText(searchTerm) : [];
-  if (matches.length === 0 && searchTerm) {
-    matches = await searchOpenFoodFacts(searchTerm);
-  }
+  // 2. ค้นด้วยคำหลายแบบ (ไทย/อังกฤษ/แบรนด์) แล้วเรียงตามความใกล้เคียงกับฉลาก (js/label-match.js)
+  // ไม่เรียก AI เพิ่ม และไม่เลือกให้อัตโนมัติ — ผู้ใช้ต้องเลือกรายการที่ตรงกับของจริงเอง
+  renderStatus(resultEl, `กำลังค้นหา "${[brand, productName].filter(Boolean).join(" ")}"...`);
+  const matches = await findLabelMatches(extracted);
 
   if (matches.length > 0) {
     renderLabelSearchResults(resultEl, extracted, matches);
@@ -120,7 +117,7 @@ function renderLabelSearchResults(resultEl, extracted, matches) {
   clearResultEl(resultEl);
 
   const info = document.createElement("p");
-  info.textContent = `อ่านข้อความจากฉลากได้: ${[extracted.product_name, extracted.brand]
+  info.textContent = `อ่านข้อความจากฉลากได้: ${[extracted.brand, extracted.product_name, extracted.flavor, extracted.size]
     .filter(Boolean)
     .join(" / ") || "(ไม่มีข้อความที่อ่านได้ชัดเจน)"}`;
   resultEl.appendChild(info);
@@ -128,13 +125,20 @@ function renderLabelSearchResults(resultEl, extracted, matches) {
   const notice = document.createElement("p");
   notice.className = "text-muted";
   notice.textContent =
-    "นี่คือผลการค้นหาจากข้อความที่อ่านได้จากภาพ ไม่ใช่การยืนยันว่าตรงกับสินค้าที่คุณมี กรุณาเลือกรายการที่ตรงกับสินค้าจริงด้วยตัวเอง";
+    "เรียงจากชื่อ แบรนด์ รส และขนาดที่ใกล้เคียงกับฉลากที่สุด ไม่ใช่การยืนยันว่าตรงกับสินค้าที่คุณมี กรุณาเลือกรายการที่ตรงกับสินค้าจริงด้วยตัวเอง";
   resultEl.appendChild(notice);
 
   const grid = document.createElement("div");
   grid.className = "product-grid";
-  matches.forEach((product) => {
-    grid.appendChild(createProductCardElement(product));
+  matches.forEach(({ product, strong }) => {
+    const card = createProductCardElement(product);
+    if (strong) {
+      const badge = document.createElement("span");
+      badge.className = "badge match-badge";
+      badge.textContent = "ตรงกับฉลาก";
+      card.prepend(badge);
+    }
+    grid.appendChild(card);
   });
   resultEl.appendChild(grid);
 

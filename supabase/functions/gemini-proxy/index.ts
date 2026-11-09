@@ -41,7 +41,9 @@ const USDA_SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 const MAX_QUERY_LENGTH = 100;
 
 const OFF_SEARCH_URL = "https://search.openfoodfacts.org/search";
-const OFF_SEARCH_FIELDS = "code,product_name,product_name_th,brands,image_front_url,categories";
+// quantity / product_name_en / รูปเล็ก ใช้จัดอันดับว่าผลค้นหาใดตรงกับรูปที่ถ่ายมากที่สุด (js/label-match.js)
+const OFF_SEARCH_FIELDS =
+  "code,product_name,product_name_th,product_name_en,brands,quantity,image_front_url,image_front_small_url,categories";
 // Open Food Facts ขอให้ทุกแอประบุชื่อตัวเองใน User-Agent
 const OFF_USER_AGENT = "KinDeeQR/1.0 (student project)";
 
@@ -71,8 +73,12 @@ const LABEL_IMAGE_PROMPT =
   `ภาพนี้อาจเป็นฉลาก/บรรจุภัณฑ์ของสินค้าอาหาร ขนม หรือเครื่องดื่ม หรืออาจเป็นผัก ผลไม้ หรือวัตถุดิบสดที่ไม่มีบรรจุภัณฑ์ ` +
   `ตอบกลับเป็น JSON รูปแบบนี้เท่านั้น ห้ามมีข้อความอื่นนอกเหนือจาก JSON และห้ามใส่ markdown code block:\n` +
   `{"is_packaged": true ถ้าเป็นสินค้าที่มีบรรจุภัณฑ์/ฉลาก หรือ false ถ้าเป็นผัก ผลไม้ หรือวัตถุดิบสด, ` +
-  `"product_name": "ชื่อสินค้าที่อ่านได้ชัดเจนจากฉลาก หรือ null ถ้าอ่านไม่ได้", ` +
+  `"product_name": "ชื่อสินค้าที่อ่านได้ชัดเจนจากฉลาก ไม่รวมแบรนด์ (ถ้ามีทั้งไทยและอังกฤษให้ใช้ไทย) หรือ null ถ้าอ่านไม่ได้", ` +
+  `"product_name_en": "ชื่อสินค้าภาษาอังกฤษ ถ้าพิมพ์อยู่บนฉลาก หรือแปลชื่อสินค้าเป็นภาษาอังกฤษสั้น ๆ เช่น tomato juice หรือ null", ` +
   `"brand": "ชื่อแบรนด์ที่อ่านได้ชัดเจนจากฉลาก หรือ null ถ้าอ่านไม่ได้", ` +
+  `"brand_en": "ชื่อแบรนด์ที่สะกดเป็นภาษาอังกฤษ ถ้าบนฉลากมี (เช่น ดอยคำ → Doi Kham) หรือ null", ` +
+  `"flavor": "รส/สูตร/รุ่นย่อยที่อ่านได้ เช่น รสต้มยำ, สูตรโซเดียมต่ำ, Original หรือ null", ` +
+  `"size": "ขนาด/ปริมาณที่พิมพ์บนฉลาก เช่น 200 มล., 150 g หรือ null", ` +
   `"barcode": "เลขบาร์โค้ดที่อ่านได้ชัดเจน (ตัวเลขเท่านั้น) หรือ null ถ้าไม่มี/อ่านไม่ได้", ` +
   `"produce_name_th": "ชื่อภาษาไทยของผัก/ผลไม้สดในภาพ หรือ null ถ้าเป็นสินค้ามีบรรจุภัณฑ์", ` +
   `"produce_name_en": "ชื่อภาษาอังกฤษทั่วไปของผัก/ผลไม้นั้นเป็นคำนามสั้น ๆ เช่น banana, cabbage หรือ null", ` +
@@ -190,7 +196,11 @@ function parseLabelJson(text: string) {
   return {
     is_packaged: obj.is_packaged !== false,
     product_name: stringOrNull(obj.product_name),
+    product_name_en: stringOrNull(obj.product_name_en),
     brand: stringOrNull(obj.brand),
+    brand_en: stringOrNull(obj.brand_en),
+    flavor: stringOrNull(obj.flavor),
+    size: stringOrNull(obj.size),
     barcode: stringOrNull(obj.barcode),
     produce_name_th: stringOrNull(obj.produce_name_th),
     produce_name_en: stringOrNull(obj.produce_name_en),
