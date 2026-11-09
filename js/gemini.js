@@ -7,7 +7,7 @@ async function callGeminiAction(action, text) {
 
   if (error) {
     console.error("callGeminiAction error:", error.message);
-    return { ok: false, error: "เรียกใช้ AI ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" };
+    return { ok: false, error: await describeFunctionError(error) };
   }
 
   if (data?.error) {
@@ -49,7 +49,7 @@ async function callGeminiImageAction(action, base64Data, mimeType) {
 
   if (error) {
     console.error(`${action} error:`, error.message);
-    return { ok: false, error: "เรียกใช้ AI ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" };
+    return { ok: false, error: await describeFunctionError(error) };
   }
 
   if (data?.error) {
@@ -64,4 +64,20 @@ async function callGeminiImageAction(action, base64Data, mimeType) {
 // ผ่าน edge function เพื่อไม่ให้ USDA API key อยู่ในโค้ดฝั่งผู้ใช้ — คืน result เป็น null ถ้าไม่พบ
 async function searchUsdaFood(nameEn) {
   return await callGeminiAction("usda_search", nameEn);
+}
+
+// supabase-js คืน error (ไม่ใช่ data) เมื่อ edge function ตอบ status ที่ไม่ใช่ 2xx
+// ข้อความสาเหตุจริงอยู่ใน body ของ response (error.context) — อ่านออกมาแสดงแทนข้อความกลาง ๆ
+async function describeFunctionError(error) {
+  try {
+    const body = await error.context?.json();
+    if (typeof body?.error === "string") return body.error;
+    if (body?.code === "WORKER_RESOURCE_LIMIT" || error.context?.status === 546) {
+      return "AI ใช้เวลานานเกินไป ลองใหม่อีกครั้ง หรือกรอกเองได้เลย";
+    }
+  } catch {
+    // body ไม่ใช่ JSON (เช่น เน็ตหลุด) → ใช้ข้อความทั่วไป
+  }
+  if (!navigator.onLine) return "ไม่มีการเชื่อมต่ออินเทอร์เน็ต";
+  return "เรียกใช้ AI ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
 }

@@ -26,6 +26,8 @@ const GEMINI_MODELS = (Deno.env.get("GEMINI_MODELS") ||
   .filter(Boolean);
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const GEMINI_RETRY_STATUSES = [429, 500, 502, 503, 504];
+// เวลารอสูงสุดต่อโมเดล — 3 โมเดล × 25 วินาที ยังต่ำกว่าเวลาที่ Supabase ตัด (~150 วินาที)
+const GEMINI_TIMEOUT_MS = Number(Deno.env.get("GEMINI_TIMEOUT_MS")) || 25_000;
 
 // UPCitemdb (ฟรี 100 ครั้ง/วัน ไม่ต้องใช้คีย์) — ฐานข้อมูลบาร์โค้ดสินค้าทั่วไปทั่วโลก ใช้เป็นแหล่งสุดท้าย
 // ไม่เปิด CORS ให้เว็บอื่น จึงต้องเรียกผ่านตัวกลางนี้
@@ -127,23 +129,41 @@ async function callGemini(parts: Record<string, unknown>[], jsonMode = false) {
       : {}),
   });
 
+  // Edge function ถูกตัดที่ ~150 วินาที ถ้าโมเดลใดค้างต้องตัดเองแล้วลองตัวถัดไป ไม่งั้นทั้งคำขอล้ม
   let lastResponse: Response | null = null;
+  let lastReason = "";
   for (const model of GEMINI_MODELS) {
+    const started = Date.now();
     try {
       const res = await fetch(`${GEMINI_BASE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body,
+        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
       });
+      console.log(`Gemini ${model} → ${res.status} in ${Date.now() - started}ms`);
       // 404 = ชื่อโมเดลนี้ใช้ไม่ได้แล้ว ก็ลองตัวถัดไปเช่นกัน
       if (res.ok || ![...GEMINI_RETRY_STATUSES, 404].includes(res.status)) return res;
-      console.warn(`Gemini model ${model} failed with ${res.status}, trying next model`);
+      lastReason = `${model}: HTTP ${res.status}`;
+      console.warn(`Gemini ${model} failed (${res.status}): ${(await res.clone().text()).slice(0, 300)}`);
       lastResponse = res;
     } catch (e) {
-      console.warn(`Gemini model ${model} network error, trying next model:`, e);
+      const timedOut = e instanceof DOMException && e.name === "TimeoutError";
+      lastReason = `${model}: ${timedOut ? "timeout" : "network error"}`;
+      console.warn(`Gemini ${model} ${timedOut ? "timed out" : "network error"} after ${Date.now() - started}ms`, e);
     }
   }
-  return lastResponse ?? new Response("all Gemini models failed", { status: 503 });
+  console.error(`All Gemini models failed, last: ${lastReason}`);
+  return lastResponse ?? new Response(`all Gemini models failed (${lastReason})`, { status: 504 });
+}
+
+// ข้อความที่ผู้ใช้เห็นเมื่อเรียก Gemini ไม่สำเร็จ — แยกตามสาเหตุเพื่อให้รู้ว่าต้องแก้ที่ไหน
+function geminiErrorMessage(status: number) {
+  if (status === 429) return "AI ถูกใช้งานเต็มโควตาชั่วคราว ลองใหม่ในอีกสักครู่ หรือกรอกเองได้เลย";
+  if (status === 504) return "AI ตอบช้าเกินไป ลองใหม่อีกครั้ง หรือกรอกเองได้เลย";
+  if (status === 400 || status === 401 || status === 403) return "ตั้งค่า Gemini API Key ไม่ถูกต้อง (แจ้งผู้ดูแลระบบ)";
+  if (status === 404) return "ไม่พบโมเดล AI ที่ตั้งไว้ (ตรวจค่า GEMINI_MODELS)";
+  return "บริการ AI ขัดข้องชั่วคราว ลองใหม่อีกครั้ง หรือกรอกเองได้เลย";
 }
 
 function stringOrNull(value: unknown) {
@@ -202,11 +222,7 @@ async function handleImageAction(
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       console.error(`Gemini API error (${action}):`, errText);
-      const busy = geminiRes.status === 429 || geminiRes.status === 503;
-      return jsonResponse(
-        { error: busy ? "AI ถูกใช้งานเต็มโควตาชั่วคราว ลองใหม่ในอีกสักครู่ หรือกรอกเองได้เลย" : "เรียก Gemini API ไม่สำเร็จ" },
-        502
-      );
+      return jsonResponse({ error: geminiErrorMessage(geminiRes.status) }, 502);
     }
 
     const geminiJson = await geminiRes.json();
@@ -435,7 +451,7 @@ async function handleTextAction(action: string, text?: string) {
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       console.error("Gemini API error:", errText);
-      return jsonResponse({ error: "เรียก Gemini API ไม่สำเร็จ" }, 502);
+      return jsonResponse({ error: geminiErrorMessage(geminiRes.status) }, 502);
     }
 
     const geminiJson = await geminiRes.json();
