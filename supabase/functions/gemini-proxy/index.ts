@@ -18,16 +18,18 @@
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 // ลองโมเดลตามลำดับ ถ้าตัวแรกโควตาเต็ม (429) หรือเซิร์ฟเวอร์ไม่ว่าง (500/503) จะลองตัวถัดไปอัตโนมัติ
 // ทำให้การอ่านภาพไม่ล้มเพราะโควตาฟรีของโมเดลเดียวหมด — เปลี่ยนรายการได้โดยไม่ต้องแก้โค้ด:
-//   supabase secrets set GEMINI_MODELS=gemini-3.8-flash,gemini-flash-latest,gemini-flash-lite-latest
+//   supabase secrets set GEMINI_MODELS=gemini-3.5-flash,gemini-3.1-flash-lite
+// (ทดสอบ พ.ย. 2569: 3.5-flash อ่านฉลากถูกใน 4–9 วินาที, 3.1-flash-lite เร็วกว่าแต่เป็นตัวสำรอง
+//  ส่วน gemini-3.8-flash / gemini-flash-latest ค้างไม่ตอบ และตระกูล 2.5 ปิดรับผู้ใช้ใหม่แล้ว)
 const GEMINI_MODELS = (Deno.env.get("GEMINI_MODELS") ||
-  "gemini-3.8-flash,gemini-flash-latest,gemini-flash-lite-latest")
+  "gemini-3.5-flash,gemini-3.1-flash-lite")
   .split(",")
   .map((m) => m.trim())
   .filter(Boolean);
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const GEMINI_RETRY_STATUSES = [429, 500, 502, 503, 504];
-// เวลารอสูงสุดต่อโมเดล — 3 โมเดล × 25 วินาที ยังต่ำกว่าเวลาที่ Supabase ตัด (~150 วินาที)
-const GEMINI_TIMEOUT_MS = Number(Deno.env.get("GEMINI_TIMEOUT_MS")) || 25_000;
+// เวลารอสูงสุดต่อโมเดล — ปกติตอบใน 4–9 วินาที บางครั้งค้างไม่ตอบเลย จึงตัดที่ 20 วินาที (3 โมเดล × 20 วินาที ยังต่ำกว่าเวลาที่ Supabase ตัด (~150 วินาที)
+const GEMINI_TIMEOUT_MS = Number(Deno.env.get("GEMINI_TIMEOUT_MS")) || 20_000;
 
 // UPCitemdb (ฟรี 100 ครั้ง/วัน ไม่ต้องใช้คีย์) — ฐานข้อมูลบาร์โค้ดสินค้าทั่วไปทั่วโลก ใช้เป็นแหล่งสุดท้าย
 // ไม่เปิด CORS ให้เว็บอื่น จึงต้องเรียกผ่านตัวกลางนี้
@@ -132,6 +134,7 @@ async function callGemini(parts: Record<string, unknown>[], jsonMode = false) {
   // Edge function ถูกตัดที่ ~150 วินาที ถ้าโมเดลใดค้างต้องตัดเองแล้วลองตัวถัดไป ไม่งั้นทั้งคำขอล้ม
   let lastResponse: Response | null = null;
   let lastReason = "";
+  let anyTimeout = false;
   for (const model of GEMINI_MODELS) {
     const started = Date.now();
     try {
@@ -149,11 +152,16 @@ async function callGemini(parts: Record<string, unknown>[], jsonMode = false) {
       lastResponse = res;
     } catch (e) {
       const timedOut = e instanceof DOMException && e.name === "TimeoutError";
+      anyTimeout ||= timedOut;
       lastReason = `${model}: ${timedOut ? "timeout" : "network error"}`;
       console.warn(`Gemini ${model} ${timedOut ? "timed out" : "network error"} after ${Date.now() - started}ms`, e);
     }
   }
   console.error(`All Gemini models failed, last: ${lastReason}`);
+  // ถ้ามีโมเดลที่ค้าง ให้รายงานว่า "ตอบช้า" แม้โมเดลท้ายสุดจะตอบ 404 — สาเหตุหลักคือการค้าง
+  if (anyTimeout && (!lastResponse || lastResponse.status === 404)) {
+    return new Response(`Gemini timed out (${lastReason})`, { status: 504 });
+  }
   return lastResponse ?? new Response(`all Gemini models failed (${lastReason})`, { status: 504 });
 }
 
